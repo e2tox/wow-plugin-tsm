@@ -248,15 +248,6 @@ function AuctionScrollingTable.GetLatestRecord(self)
 	return selection
 end
 
---- ignore all latest record
-function AuctionScrollingTable.IgnoreLatestRecord(self)
-	local selection = self:GetSelectedRecord()
-	if selection then
-		-- print("ignore",selection:GetField("hash"))
-		self:SetSelectedRecord(nil)
-	end
-end
-
 --- Gets the selected auction record.
 -- @tparam AuctionScrollingTable self The auction scrolling table object
 -- @return The selected auction record or nil if there's no selection
@@ -312,6 +303,7 @@ function AuctionScrollingTable._UpdateData(self)
 	end
 	local sortKey = self._sortCol
 	local sortCol = self._tableInfo:_GetSortColById(sortKey)
+	self._latestRecord = nil
 	wipe(self._data)
 	wipe(self._baseRecordByItem)
 	wipe(self._baseRecordByHash)
@@ -321,6 +313,7 @@ function AuctionScrollingTable._UpdateData(self)
 	local hashes = TSM.TempTable.Acquire()
 	local sortAscending = self._sortAscending
 	local showingAltTitles = self._tableInfo:_GetTitleIndex() ~= 1
+
 	for _, record in self._query:Iterator() do
 		local baseItemString = record.baseItemString
 		local hash = record.hash
@@ -380,10 +373,11 @@ function AuctionScrollingTable._UpdateData(self)
 		if not self._baseRecordByHash[hash] or record.filterId > self._baseRecordByHash[hash].filterId then
 			self._baseRecordByHash[hash] = record
 
-			if not self._latestRecordByHash[hash] then
-				--print("select hash",hash)
-				--print("select record",record:GetField("hash"))
-				self._latestRecord = record
+			-- 选择命中的第一个item
+			if not self._latestRecord then
+				if not self._latestRecordByHash[hash] then
+					self._latestRecord = record
+				end
 			end
 			self._latestRecordByHash[hash] = true
 
