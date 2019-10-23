@@ -1,5 +1,5 @@
 ## Interface: 80205
-## Title: |cff00fe00TradeSkillMaster|r
+## Title: |cff00fe00TradeSkillMaster - 极速版|r
 ## Notes: Auction house and gold making addon.
 ## Author: TradeSkillMaster Team
 ## Version: v4.8.17
