@@ -165,7 +165,7 @@ function private.GetScanFrame()
 				:SetText(L["Starting Scan..."])
 			)
 			:AddChild(TSMAPI_FOUR.UI.NewNamedElement("ActionButton", "actionBtn", "TSMSniperBtn")
-				:SetStyle("width", 165)
+				:SetStyle("width", 135)
 				:SetStyle("height", 26)
 				:SetStyle("margin.right", 8)
 				:SetStyle("iconTexturePack", "iconPack.14x14/Post")
@@ -174,8 +174,18 @@ function private.GetScanFrame()
 				:DisableClickCooldown(true)
 				:SetScript("OnClick", private.ActionButtonOnClick)
 			)
+			:AddChild(TSMAPI_FOUR.UI.NewElement("ActionButton", "skipBtn")
+				:SetStyle("width", 135)
+				:SetStyle("height", 26)
+				:SetStyle("margin.right", 8)
+				:SetStyle("iconTexturePack", "iconPack.14x14/Skip")
+				:SetText(L["SKIP"])
+				:SetDisabled(false)
+				:DisableClickCooldown(true)
+				:SetScript("OnClick", private.SkipButtonOnClick)
+			)
 			:AddChild(TSMAPI_FOUR.UI.NewElement("ActionButton", "restartBtn")
-				:SetStyle("width", 165)
+				:SetStyle("width", 135)
 				:SetStyle("height", 26)
 				:SetStyle("iconTexturePack", "iconPack.14x14/Reset")
 				:SetText(L["RESTART"])
@@ -210,6 +220,22 @@ end
 function private.SelectionFrameOnHide(frame)
 	assert(frame == private.selectionFrame)
 	private.selectionFrame = nil
+end
+
+function private.ScanOnFilterDone(self, filter, numNewResults)
+	-- print("in ScanOnFilterDone", filter)
+	-- print("in ScanOnFilterDone result", numNewResults)
+	-- 这里的 self 是 scanFrame
+	if numNewResults > 0 then
+		-- TOX: 有结果，自动选择一项
+		private.fsm:ProcessEvent("EV_SCAN_PAUSE")
+		TSM.Sound.PlaySound(TSM.db.global.sniperOptions.sniperSound)
+	else
+		-- print("CONTINUE 2")
+		-- TOX: 搜索结果为空，自动重搜
+		print("未找到任何物品，继续搜索")
+		private.fsm:ProcessEvent("EV_SCAN_CONTINUE")
+	end
 end
 
 function private.BuyoutScanButtonOnClick(button)
@@ -251,6 +277,10 @@ end
 
 function private.ActionButtonOnClick(button)
 	private.fsm:ProcessEvent("EV_ACTION_CLICKED")
+end
+
+function private.SkipButtonOnClick(button)
+	private.fsm:ProcessEvent("EV_SKIP_CLICKED")
 end
 
 function private.RestartButtonOnClick(button)
@@ -380,16 +410,6 @@ function private.FSMCreate()
 				:Draw()
 		end
 	end
-	local function ScanOnFilterDone(self, filter, numNewResults)
-		-- 这里的 self 是 scanFrame
-		if numNewResults > 0 then
-			TSM.Sound.PlaySound(TSM.db.global.sniperOptions.sniperSound)
-			-- TOX: 有结果，自动选择一项
-		else
-			-- TOX: 搜索结果为空，自动重搜
-			private.fsm:ProcessEvent("ST_RESULTS")
-		end
-	end
 	private.fsm = TSMAPI_FOUR.FSM.New("SNIPER")
 		:AddState(TSMAPI_FOUR.FSM.NewState("ST_INIT")
 			:SetOnEnter(function(context, ...)
@@ -442,7 +462,7 @@ function private.FSMCreate()
 				if not context.auctionScan then
 					context.auctionScan = TSMAPI_FOUR.Auction.NewAuctionScan(context.db)
 						:SetResolveSellers(false)
-						:SetScript("OnFilterDone", ScanOnFilterDone)
+						:SetScript("OnFilterDone", private.ScanOnFilterDone)
 				end
 				if context.scanFrame then
 					context.scanFrame:GetElement("bottom.progressBar"):SetProgressIconHidden(false)
@@ -457,14 +477,25 @@ function private.FSMCreate()
 			end)
 			:AddTransition("ST_RESULTS")
 			:AddTransition("ST_FINDING_AUCTION")
+			:AddTransition("ST_SELECT_AUCTION")
 			:AddTransition("ST_INIT")
 			:AddEvent("EV_SCAN_COMPLETE", function(context)
 				if context.scanFrame and context.scanFrame:GetElement("auctions"):GetSelectedRecord() then
+					-- print("CONTINUE SCAN")
 					return "ST_FINDING_AUCTION"
 				else
 					-- TOX: 将重搜功能移动到 FilterComplete 阶段
 					-- return "ST_RESULTS"
+					-- print("PAUSE")
 				end
+			end)
+			:AddEvent("EV_SCAN_PAUSE", function(context)
+				-- print("inside EV_SCAN_PAUSE")
+				return "ST_SELECT_AUCTION"
+			end)
+			:AddEvent("EV_SCAN_CONTINUE", function(context)
+				-- print("inside EV_SCAN_CONTINUE")
+				return "ST_RESULTS"
 			end)
 			:AddEvent("EV_SCAN_FAILED", TSMAPI_FOUR.FSM.SimpleTransitionEventHandler("ST_INIT"))
 			:AddEvent("EV_PHASED", function()
@@ -505,16 +536,25 @@ function private.FSMCreate()
 		)
 		:AddState(TSMAPI_FOUR.FSM.NewState("ST_SELECT_AUCTION")
 			:SetOnEnter(function(context)
-				local best = context.scanFrame:GetElement("auctions"):GetLatestRecord()
-				if best then
-					-- 自动选中一个物品
-					print("ST_SELECT_AUCTION no seller:", best:GetField("hashNoSeller"))
-					print("ST_SELECT_AUCTION seller:", best:GetField("hash"))
+				-- print("inside ST_SELECT_AUCTION")
+				if context.scanFrame then
 
-					-- TOX: set selection
-					context.scanFrame:GetElement("auctions"):SetSelection(best)
+					print("ST_SELECT_AUCTION scanFrame")
+					local latest = context.scanFrame:GetElement("auctions"):GetLatestRecord()
+
+					if latest then
+						--- 自动选中一个物品
+						print("ST_SELECT_AUCTION no seller:", latest:GetField("hashNoSeller"))
+						print("ST_SELECT_AUCTION seller:", latest:GetField("hash"))
+
+						--- print("SET SELECTION", latest:GetField("hash"))
+						context.scanFrame:GetElement("auctions"):SetSelectedRecord(latest)
+						return "ST_FINDING_AUCTION"
+					else
+						print("no best")
+						return "ST_RESULTS"
+					end
 				else
-					-- TOX: 有搜索结果，也有过滤结果，但是所有的物品都被加入黑名单了，继续狙击下一个物品
 					return "ST_RESULTS"
 				end
 			end)
@@ -585,6 +625,7 @@ function private.FSMCreate()
 		)
 		:AddState(TSMAPI_FOUR.FSM.NewState("ST_BIDDING_BUYING")
 			:SetOnEnter(function(context)
+				print("inside ST_BIDDING_BUYING")
 				local selection = context.scanFrame and context.scanFrame:GetElement("auctions"):GetSelectedRecord()
 				local auctionSelected = selection and context.findHash == selection:GetField("hash")
 				local numCanAction = not auctionSelected and 0 or (context.numFound - context.numActioned)
@@ -627,6 +668,10 @@ function private.FSMCreate()
 			:AddTransition("ST_INIT")
 			:AddEvent("EV_AUCTION_SELECTION_CHANGED", TSMAPI_FOUR.FSM.SimpleTransitionEventHandler("ST_RESULTS"))
 			:AddEvent("EV_ACTION_CLICKED", TSMAPI_FOUR.FSM.SimpleTransitionEventHandler("ST_PLACING_BID_BUY"))
+			:AddEvent("EV_SKIP_CLICKED", function(context)
+				print("INSIDE EV_SKIP_CLICKED")
+				context.scanFrame:GetElement("auctions"):SetSelection(nil)
+			end)
 			:AddEvent("EV_MSG", function(context, msg)
 				if msg == LE_GAME_ERR_AUCTION_HIGHER_BID or msg == LE_GAME_ERR_ITEM_NOT_FOUND or msg == LE_GAME_ERR_AUCTION_BID_OWN or msg == LE_GAME_ERR_NOT_ENOUGH_MONEY then
 					-- failed to bid/buy an auction
