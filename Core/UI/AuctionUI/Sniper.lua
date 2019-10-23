@@ -10,9 +10,21 @@ local _, TSM = ...
 local Sniper = TSM.UI.AuctionUI:NewPackage("Sniper")
 local L = TSM.L
 local private = { fsm = nil, selectionFrame = nil, hasLastScan = nil, contentPath = "selection" }
+-- TOX: 超过60秒没反应就重置AH
 local PHASED_TIME = 60
 
-
+-- ============================================================================
+-- TOX:
+-- 默认实现：
+-- 		首先进行无限循环搜索，并把结果记录下来，点击单条记录后必定再执行一次搜索
+-- 增强实现：
+--   1. 增加动态黑名单功能，使用不含有卖家的hash作为key
+--   2. 每次扫描完成之后，如果有结果并且不在黑名单上就自动选择一项，如果没有结果，默认自动重搜
+--   3. 点击继续之后会取消当前选择，并且将当前的所有条目加入黑名单，然后启动狙击
+--   4. 点击条目之后，首先判断当前选择是否在拍卖行列表里，如果不在列表里，则启动一个单独搜索
+--   5. 视觉上高亮选中的项目，灰色非当前的搜索结果
+--   6. 对于在拍卖行列表中的物品，在最右侧增加直接购买的按钮
+-- ============================================================================
 
 -- ============================================================================
 -- Module Functions
@@ -369,8 +381,13 @@ function private.FSMCreate()
 		end
 	end
 	local function ScanOnFilterDone(self, filter, numNewResults)
+		-- 这里的 self 是 scanFrame
 		if numNewResults > 0 then
 			TSM.Sound.PlaySound(TSM.db.global.sniperOptions.sniperSound)
+			-- TOX: 有结果，自动选择一项
+		else
+			-- TOX: 搜索结果为空，自动重搜
+			private.fsm:ProcessEvent("ST_RESULTS")
 		end
 	end
 	private.fsm = TSMAPI_FOUR.FSM.New("SNIPER")
@@ -445,7 +462,8 @@ function private.FSMCreate()
 				if context.scanFrame and context.scanFrame:GetElement("auctions"):GetSelectedRecord() then
 					return "ST_FINDING_AUCTION"
 				else
-					return "ST_RESULTS"
+					-- TOX: 将重搜功能移动到 FilterComplete 阶段
+					-- return "ST_RESULTS"
 				end
 			end)
 			:AddEvent("EV_SCAN_FAILED", TSMAPI_FOUR.FSM.SimpleTransitionEventHandler("ST_INIT"))
@@ -484,6 +502,23 @@ function private.FSMCreate()
 			:AddTransition("ST_AUCTION_FOUND")
 			:AddTransition("ST_FINDING_AUCTION")
 			:AddTransition("ST_INIT")
+		)
+		:AddState(TSMAPI_FOUR.FSM.NewState("ST_SELECT_AUCTION")
+			:SetOnEnter(function(context)
+				local best = context.scanFrame:GetElement("auctions"):GetLatestRecord()
+				if best then
+					-- 自动选中一个物品
+					print("ST_SELECT_AUCTION no seller:", best:GetField("hashNoSeller"))
+					print("ST_SELECT_AUCTION seller:", best:GetField("hash"))
+
+					-- TOX: set selection
+					context.scanFrame:GetElement("auctions"):SetSelection(best)
+				else
+					-- TOX: 有搜索结果，也有过滤结果，但是所有的物品都被加入黑名单了，继续狙击下一个物品
+					return "ST_RESULTS"
+				end
+			end)
+			:AddTransition("ST_FINDING_AUCTION")
 		)
 		:AddState(TSMAPI_FOUR.FSM.NewState("ST_FINDING_AUCTION")
 			:SetOnEnter(function(context)
