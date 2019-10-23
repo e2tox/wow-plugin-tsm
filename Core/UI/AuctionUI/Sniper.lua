@@ -541,14 +541,15 @@ function private.FSMCreate()
 				local latest = context.scanFrame:GetElement("auctions"):GetLatestRecord()
 				if latest then
 					--- 自动选中一个物品
-					print("Auto select:", latest:GetField("hash"))
+					print("当前选中物品:", latest:GetField("hash"))
 					--- print("SET SELECTION", latest:GetField("hash"))
 					context.scanFrame:GetElement("auctions"):SetSelectedRecord(latest)
 				else
-					print("no best")
+					print("没有符合条件的物品，继续搜索")
 					return "ST_RESULTS"
 				end
 			end)
+			:AddTransition("ST_RESULTS")
 			:AddTransition("ST_FINDING_AUCTION")
 		)
 		--:AddState(TSMAPI_FOUR.FSM.NewState("ST_SELECT_AUCTION")
