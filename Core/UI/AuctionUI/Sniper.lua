@@ -513,6 +513,7 @@ function private.FSMCreate()
 				TSMAPI_FOUR.Thread.Kill(context.scanThreadId)
 				-- find item
 				context.findAuction = nil
+				context.findIndex = nil
 				-- index for matching items in current list
 				context.findResult = nil
 				context.numFound = 0
@@ -621,8 +622,18 @@ function private.FSMCreate()
 			:AddEvent("EV_AUCTION_NOT_FOUND", TSMAPI_FOUR.FSM.SimpleTransitionEventHandler("ST_AUCTION_NOT_FOUND"))
 			:AddEvent("EV_AUCTION_SELECTION_CHANGED", function(context)
 				assert(context.scanFrame)
-				if context.scanFrame:GetElement("auctions"):GetSelectedRecord() then
-					return "ST_FINDING_AUCTION"
+				local selected = context.scanFrame:GetElement("auctions"):GetSelectedRecord();
+				if selected then
+					-- find record from current list
+					local index = context.auctionScan.GetRecordIndex(selected)
+					if index then
+						print("Found item index from list", index, " just need click one button to bid")
+						context.findAuction = selected;
+						context.findIndex = index
+					else
+						return "ST_FINDING_AUCTION"
+					end
+
 				else
 					return "ST_RESULTS"
 				end
@@ -740,7 +751,7 @@ function private.FSMCreate()
 		:AddState(TSMAPI_FOUR.FSM.NewState("ST_PLACING_BID_BUY")
 			:SetOnEnter(function(context)
 				-- get item from table
-				local index = tremove(context.findResult, context.findIndex or #context.findResult)
+				local index = context.findIndex or tremove(context.findResult, #context.findResult)
 				assert(index)
 				if context.auctionScan:ValidateIndex(index, context.findAuction, true) then
 					if context.scanType == "buyout" then

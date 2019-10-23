@@ -216,6 +216,16 @@ function AuctionScan.ValidateIndex(self, index, validateRow, noSeller)
 	return validateRow:GetField(noSeller and "hashNoSeller" or "hash") == self:_GetAuctionRowHash(index, noSeller)
 end
 
+function AuctionScan.GetRecordIndex(self, row, noSeller)
+	local found = false
+	for i = 1, GetNumAuctionItems("list") do
+		if self:ValidateIndex(i, row, noSeller) then
+			return i
+		end
+	end
+	return nil
+end
+
 function AuctionScan.GetProgress(self)
 	return self._filtersScanned, #self._filters, self._pagesScanned, self._numPages
 end
