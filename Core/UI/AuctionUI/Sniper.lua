@@ -537,28 +537,19 @@ function private.FSMCreate()
 		:AddState(TSMAPI_FOUR.FSM.NewState("ST_SELECT_AUCTION")
 			:SetOnEnter(function(context)
 				-- print("inside ST_SELECT_AUCTION")
-				if context.scanFrame then
-
-					print("get latest item from match records")
-					local latest = context.scanFrame:GetElement("auctions"):GetLatestRecord()
-
-					if latest then
-						--- 自动选中一个物品
-						print("ST_SELECT_AUCTION no seller:", latest:GetField("hashNoSeller"))
-						print("ST_SELECT_AUCTION seller:", latest:GetField("hash"))
-
-						--- print("SET SELECTION", latest:GetField("hash"))
-						context.scanFrame:GetElement("auctions"):SetSelectedRecord(latest)
-						return "ST_FINDING_AUCTION"
-					else
-						print("no best")
-						return "ST_RESULTS"
-					end
+				assert(context.scanFrame)
+				local latest = context.scanFrame:GetElement("auctions"):GetLatestRecord()
+				if latest then
+					--- 自动选中一个物品
+					print("Auto select:", latest:GetField("hash"))
+					--- print("SET SELECTION", latest:GetField("hash"))
+					context.scanFrame:GetElement("auctions"):SetSelectedRecord(latest)
 				else
+					print("no best")
 					return "ST_RESULTS"
 				end
 			end)
-			 :AddTransition("ST_FINDING_AUCTION")
+			:AddTransition("ST_FINDING_AUCTION")
 		)
 		--:AddState(TSMAPI_FOUR.FSM.NewState("ST_SELECT_AUCTION")
 		--	:SetOnEnter(function(context)
@@ -628,12 +619,12 @@ function private.FSMCreate()
 			:AddEvent("EV_AUCTION_FOUND", TSMAPI_FOUR.FSM.SimpleTransitionEventHandler("ST_AUCTION_FOUND"))
 			:AddEvent("EV_AUCTION_NOT_FOUND", TSMAPI_FOUR.FSM.SimpleTransitionEventHandler("ST_AUCTION_NOT_FOUND"))
 			:AddEvent("EV_AUCTION_SELECTION_CHANGED", function(context)
-				assert(context.scanFrame)if context.scanFrame:GetElement("auctions"):GetSelectedRecord() then
-            return "ST_FINDING_AUCTION"
-        else
-            return "ST_RESULTS"
-        end
-
+				assert(context.scanFrame)
+				if context.scanFrame:GetElement("auctions"):GetSelectedRecord() then
+					return "ST_FINDING_AUCTION"
+				else
+					return "ST_RESULTS"
+				end
 				--local auctions = context.scanFrame:GetElement("auctions")
 				--local selected = auctions:GetSelectedRecord()
 				--if selected then
