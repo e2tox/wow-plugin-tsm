@@ -243,6 +243,7 @@ function private.BidScanButtonOnClick(button)
 end
 
 function private.AuctionsOnSelectionChanged()
+	print("selection changed")
 	private.fsm:ProcessEvent("EV_AUCTION_SELECTION_CHANGED")
 end
 
@@ -450,7 +451,7 @@ function private.FSMCreate()
 		)
 		:AddState(TSMAPI_FOUR.FSM.NewState("ST_RUNNING_SCAN")
 			:SetOnEnter(function(context)
-				print("ST_RUNNING_SCAN")
+--				print("ST_RUNNING_SCAN")
 				private.hasLastScan = context.scanType
 				if not context.query then
 					context.query = context.db:NewQuery()
@@ -475,25 +476,26 @@ function private.FSMCreate()
 			:AddTransition("ST_CHECK_SELECTION")
 			:AddTransition("ST_INIT")
 			:AddEvent("EV_SCAN_COMPLETE", function(context)
-
+--				print("EV_SCAN_COMPLETE")
 				local auctions = context.scanFrame:GetElement("auctions")
-
 				local best = auctions:GetLatestRecord()
+
+				-- always set best item as current selection
 				if best then
 					auctions:SetSelectedRecord(best)
 				end
 
 				if auctions:GetSelectedRecord() then
-					print("ST_RUNNING_SCAN -> EV_SCAN_COMPLETE -> ST_CHECK_SELECTION")
+					-- print("ST_RUNNING_SCAN -> EV_SCAN_COMPLETE -> ST_CHECK_SELECTION")
 					return "ST_CHECK_SELECTION"
 				else
-					print("ST_RUNNING_SCAN -> EV_SCAN_COMPLETE -> ST_RESULTS")
+					-- print("ST_RUNNING_SCAN -> EV_SCAN_COMPLETE -> ST_RESULTS")
 					return "ST_RESULTS"
 				end
 			end)
 			:AddEvent("EV_SCAN_FAILED", TSMAPI_FOUR.FSM.SimpleTransitionEventHandler("ST_INIT"))
 			:AddEvent("EV_PHASED", function()
-				print("ST_RUNNING_SCAN -> EV_PHASED")
+--				print("ST_RUNNING_SCAN -> EV_PHASED")
 				TSM:Print(L["You've been phased which has caused the AH to stop working due to a bug on Blizzard's end. Please close and reopen the AH and restart Sniper."])
 				return "ST_INIT"
 			end)
@@ -509,7 +511,7 @@ function private.FSMCreate()
 		)
 		:AddState(TSMAPI_FOUR.FSM.NewState("ST_RESULTS")
 			:SetOnEnter(function(context)
-				print("ST_RESULTS")
+--				print("ST_RESULTS")
 				TSMAPI_FOUR.Thread.Kill(context.scanThreadId)
 				context.findAuction = nil
 				context.findResult = nil
@@ -522,10 +524,10 @@ function private.FSMCreate()
 				UpdateScanFrame(context)
 				local selection = context.scanFrame and context.scanFrame:GetElement("auctions"):GetSelectedRecord()
 				if selection then
-					print("ST_RESULTS -> ST_CHECK_SELECTION")
+--					print("ST_RESULTS -> ST_CHECK_SELECTION")
 					return "ST_CHECK_SELECTION"
 				else
-					print("ST_RESULTS -> ST_RUNNING_SCAN")
+--					print("ST_RESULTS -> ST_RUNNING_SCAN")
 					return "ST_RUNNING_SCAN"
 				end
 			end)
@@ -538,14 +540,14 @@ function private.FSMCreate()
 			:SetOnEnter(function(context)
 				assert(context.scanFrame)
 				context.findAuction = context.scanFrame:GetElement("auctions"):GetSelectedRecord()
-				print("ST_CHECK_SELECTION -> ST_FINDING_AUCTION")
+--				print("ST_CHECK_SELECTION -> ST_FINDING_AUCTION")
 				return "ST_FINDING_AUCTION"
 			end)
 			:AddTransition("ST_FINDING_AUCTION")
 		)
 		:AddState(TSMAPI_FOUR.FSM.NewState("ST_FINDING_AUCTION")
 			:SetOnEnter(function(context)
-				print("ST_FINDING_AUCTION")
+--				print("ST_FINDING_AUCTION")
 				assert(context.scanFrame)
 				context.findAuction = context.scanFrame:GetElement("auctions"):GetSelectedRecord()
 				context.findHash = context.findAuction:GetField("hash")
@@ -660,7 +662,7 @@ function private.FSMCreate()
 			:AddEvent("EV_SKIP_CLICKED", function(context)
 				print("INSIDE EV_SKIP_CLICKED")
 				-- unselect to trigger scan
-				context.scanFrame:GetElement("auctions"):SetSelection(nil)
+				context.scanFrame:GetElement("auctions"):SetSelectedRecord(nil)
 			end)
 			:AddEvent("EV_MSG", function(context, msg)
 				if msg == LE_GAME_ERR_AUCTION_HIGHER_BID or msg == LE_GAME_ERR_ITEM_NOT_FOUND or msg == LE_GAME_ERR_AUCTION_BID_OWN or msg == LE_GAME_ERR_NOT_ENOUGH_MONEY then
@@ -719,6 +721,7 @@ function private.FSMCreate()
 			:AddTransition("ST_BIDDING_BUYING")
 		)
 		:AddDefaultEvent("EV_SCAN_FRAME_SHOWN", function(context, scanFrame)
+			print("Set ScanFrame")
 			context.scanFrame = scanFrame
 			UpdateScanFrame(context)
 		end)
