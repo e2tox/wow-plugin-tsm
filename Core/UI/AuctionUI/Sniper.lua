@@ -243,7 +243,6 @@ function private.BidScanButtonOnClick(button)
 end
 
 function private.AuctionsOnSelectionChanged()
-	print("selection changed")
 	private.fsm:ProcessEvent("EV_AUCTION_SELECTION_CHANGED")
 end
 
@@ -721,7 +720,6 @@ function private.FSMCreate()
 			:AddTransition("ST_BIDDING_BUYING")
 		)
 		:AddDefaultEvent("EV_SCAN_FRAME_SHOWN", function(context, scanFrame)
-			print("Set ScanFrame")
 			context.scanFrame = scanFrame
 			UpdateScanFrame(context)
 		end)

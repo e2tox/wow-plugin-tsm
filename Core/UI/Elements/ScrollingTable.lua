@@ -192,7 +192,7 @@ function ScrollingTable.SetSelection(self, selection)
 	self._selection = selection
 
 	if selection then
-		print("当前选中物品:", selection.hash)
+		print("当前选中物品:", selection)
 		-- set the scroll so that the selection is visible if necessary
 		local rowHeight = self:_GetStyle("rowHeight")
 		local firstVisibleIndex = ceil(self._scrollValue / rowHeight) + 1
