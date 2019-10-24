@@ -62,8 +62,6 @@ function AuctionScrollingTable.__init(self)
 	self.__super:__init()
 	self._query = nil
 	self._marketValueFunc = nil
-	self._latestRecord = nil
-	self._latestRecordByHash = {}
 	self._expanded = {}
 	self._baseRecordByItem = {}
 	self._baseRecordByHash = {}
@@ -160,7 +158,6 @@ function AuctionScrollingTable.Release(self)
 		self._query = nil
 	end
 	self._marketValueFunc = nil
-	wipe(self._latestRecordByHash)
 	wipe(self._expanded)
 	wipe(self._baseRecordByItem)
 	wipe(self._baseRecordByHash)
@@ -239,13 +236,6 @@ end
 function AuctionScrollingTable.SetSelectedRecord(self, record)
 	self.__super:SetSelection(record and record:GetField("hash") or nil)
 	return self
-end
-
---- TOX: Get latest record
-function AuctionScrollingTable.GetLatestRecord(self)
-	local record = self._latestRecord
-	self._latestRecord = nil
-	return record or nil
 end
 
 --- Gets the selected auction record.
@@ -370,15 +360,6 @@ function AuctionScrollingTable._UpdateData(self)
 		-- use the highest filterId record so more recent auctions show up first in sniper
 		if not self._baseRecordByHash[hash] or record.filterId > self._baseRecordByHash[hash].filterId then
 			self._baseRecordByHash[hash] = record
-
-			-- 选择第一个
-			if not self._latestRecord then
-				if not self._latestRecordByHash[hash] then
-					self._latestRecord = record
-				end
-			end
-			self._latestRecordByHash[hash] = true
-
 			-- need to make sure _baseRecordByHash and _baseRecordByItem are kept in sync
 			if private.sortContext.baseRecordSortValues[baseItemString] == sortValue then
 				local prevRecord = self._baseRecordByItem[baseItemString]
