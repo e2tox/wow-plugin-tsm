@@ -655,6 +655,7 @@ function private.ScanQueryThreaded(auctionScan)
 			-- we've made the query, now store the results
 			if filter:_IsSniper() then
 				-- check the result
+--				print(23)
 				if not private.ValidateThreaded(auctionScan) then
 					-- don't store results for a failed filter
 					TSM:LOG_ERR("Failed to scan filter")
@@ -664,8 +665,11 @@ function private.ScanQueryThreaded(auctionScan)
 					TSM:LOG_INFO("Stopping canelled scan")
 					break
 				end
+--				print(24)
 				auctionScan._db:SetQueryUpdatesPaused(true)
+--				print(25)
 				for j = 1, GetNumAuctionItems("list") do
+--					print(3, j)
 					local row = auctionScan:_CreateAuctionRowIfNotFiltered(j, filter)
 					if row then
 						local hashNoSeller = row:GetField("hashNoSeller")
@@ -696,6 +700,7 @@ function private.ScanQueryThreaded(auctionScan)
 						row:Release()
 					end
 				end
+--				print(26)
 				auctionScan._db:SetQueryUpdatesPaused(false)
 			else
 				-- scan the results

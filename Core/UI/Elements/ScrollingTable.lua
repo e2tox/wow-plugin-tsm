@@ -182,10 +182,16 @@ function ScrollingTable.SetSelection(self, selection)
 	local index = nil
 	if selection then
 		index = TSM.Table.KeyByValue(self._data, selection)
-		assert(index)
+		if not index then
+			error("Unable to select non-existed object", 2)
+			return self
+		end
 	end
+
 	self._selection = selection
+
 	if selection then
+		print("当前选中物品:", selection)
 		-- set the scroll so that the selection is visible if necessary
 		local rowHeight = self:_GetStyle("rowHeight")
 		local firstVisibleIndex = ceil(self._scrollValue / rowHeight) + 1
