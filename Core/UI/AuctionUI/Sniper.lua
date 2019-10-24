@@ -167,7 +167,7 @@ function private.GetScanFrame()
 				:SetText(L["Starting Scan..."])
 			)
 			:AddChild(TSMAPI_FOUR.UI.NewNamedElement("ActionButton", "actionBtn", "TSMSniperBtn")
-				:SetStyle("width", 135)
+				:SetStyle("width", 165)
 				:SetStyle("height", 26)
 				:SetStyle("margin.right", 8)
 				:SetStyle("iconTexturePack", "iconPack.14x14/Post")
@@ -177,7 +177,7 @@ function private.GetScanFrame()
 				:SetScript("OnClick", private.ActionButtonOnClick)
 			)
 			:AddChild(TSMAPI_FOUR.UI.NewElement("ActionButton", "skipBtn")
-				:SetStyle("width", 135)
+				:SetStyle("width", 165)
 				:SetStyle("height", 26)
 				:SetStyle("margin.right", 8)
 				:SetStyle("iconTexturePack", "iconPack.14x14/Skip")
@@ -472,12 +472,14 @@ function private.FSMCreate()
 					context.scanFrame:GetElement("bottom.progressBar"):SetProgressIconHidden(false)
 				end
 				UpdateScanFrame(context)
+				context.scaning = true
 				TSMAPI_FOUR.Thread.SetCallback(context.scanThreadId, private.FSMScanCallback)
 				TSMAPI_FOUR.Thread.Start(context.scanThreadId, context.auctionScan)
 				TSMAPI_FOUR.Delay.AfterTime("sniperPhaseDetect", PHASED_TIME, private.FSMPhasedCallback)
 			end)
 			:SetOnExit(function(context)
 				TSMAPI_FOUR.Delay.Cancel("sniperPhaseDetect")
+				context.scaning = false
 			end)
 			:AddTransition("ST_RESULTS")
 			:AddTransition("ST_CHECK_SELECTION")
@@ -510,9 +512,10 @@ function private.FSMCreate()
 			:AddEvent("EV_AUCTION_SELECTION_CHANGED", function(context)
 --				print("ST_RUNNING_SCAN -> EV_AUCTION_SELECTION_CHANGED")
 				assert(context.scanFrame)
-				if context.scanFrame:GetElement("auctions"):GetSelectedRecord() then
+				if context.scaning and context.scanFrame:GetElement("auctions"):GetSelectedRecord() then
 					-- the user selected something, so cancel the current scan
 					-- once scan cancelled, will trigger EV_SCAN_COMPLETE event
+					print("终止当前搜索")
 					context.auctionScan:Cancel()
 				end
 			end)
@@ -556,21 +559,27 @@ function private.FSMCreate()
 
 				local selected = auctions:GetSelectedRecord()
 --				print('finding item in list', selected:GetField("itemLink"), "...")
-				local result = context.auctionScan:FindAuctionsOnCurrentPage(selected)
-				if #result > 0 then
-					context.findAuction = selected
-					context.findHash = selected:GetField("hash")
-					context.findResult = result
-					context.numFound = #result
---					print('found ', #result, 'items, enable bidding now', context.findHash)
-					return "ST_BIDDING_BUYING"
+				if selected then
+					local result = context.auctionScan:FindAuctionsOnCurrentPage(selected)
+					if #result > 0 then
+						context.findAuction = selected
+						context.findHash = selected:GetField("hash")
+						context.findResult = result
+						context.numFound = #result
+						--					print('found ', #result, 'items, enable bidding now', context.findHash)
+						return "ST_BIDDING_BUYING"
+					else
+						-- print('not found, do a new search')
+						return "ST_FINDING_AUCTION"
+					end
 				else
-					-- print('not found, do a new search')
-					return "ST_FINDING_AUCTION"
+					return "ST_RESULTS"
 				end
+
 			end)
 			:AddTransition("ST_BIDDING_BUYING")
 			:AddTransition("ST_FINDING_AUCTION")
+			:AddTransition("ST_RESULTS")
 		)
 		:AddState(TSMAPI_FOUR.FSM.NewState("ST_FINDING_AUCTION")
 			:SetOnEnter(function(context)
@@ -689,15 +698,26 @@ function private.FSMCreate()
 				if context.scanFrame then
 					context.scanFrame:GetElement("bottom.progressBar"):SetProgressIconHidden(context.numConfirmed == context.numActioned)
 				end
+
 				UpdateBuyButtons(context, selection)
 				UpdateScanFrame(context)
 
 				if context.scanFrame and selection and numCanAction > 0 then
 					local actionBtn = context.scanFrame:GetElement("bottom.actionBtn")
+					local progressBar = context.scanFrame:GetElement("bottom.progressBar")
 					local buyout = selection:GetField("itemBuyout")
-					local text = TSM.Money.ToString(buyout, nil, "OPT_ICON")
-					actionBtn:SetStyle("iconTexturePack", ""):SetText(text):Draw()
-					print("可购买", selection:GetField("itemLink"), "一口价", text)
+					local text = TSM.Money.ToString(buyout, nil, "OPT_ICON", "OPT_TRIM")
+
+					if selection.stackSize > 1 then
+						local total = TSM.Money.ToString(buyout * selection.stackSize, nil, "OPT_TRIM")
+						actionBtn:SetText(total):Draw()
+						print(format("发现 |T%s:0|t %s %s (%s) |cff00fe00x%d|r", selection.texture, selection.itemLink, text, selection.seller, selection.stackSize))
+					else
+						actionBtn:SetText(text):Draw()
+						print(format("发现 |T%s:0|t %s %s (%s)", selection.texture, selection.itemLink, text, selection.seller))
+					end
+
+					progressBar:SetText(format("|T%s:0|t %s", selection.texture, selection.itemLink )):Draw()
 				end
 			end)
 			:AddTransition("ST_BIDDING_BUYING")

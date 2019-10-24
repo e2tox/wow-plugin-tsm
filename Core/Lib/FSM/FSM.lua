@@ -122,6 +122,7 @@ function FSM._Transition(self, eventResult)
 		self._currentState = toState
 		result = TSM.TempTable.Acquire(toStateObj:_Enter(self._context, TSM.TempTable.UnpackAndRelease(result)))
 		self._inTransition = false
+		TSM:LOG_INFO("[%s] %s !", self._name, self._currentState)
 	end
 	TSM.TempTable.Release(result)
 end
