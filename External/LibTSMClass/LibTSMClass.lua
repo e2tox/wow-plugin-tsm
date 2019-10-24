@@ -188,6 +188,7 @@ private.CLASS_MT = {
 			-- We wrap class methods so that within them, the instance appears to be of the defining class
 			classInfo.static[key] = function(inst, ...)
 				local instInfo = private.instInfo[inst]
+				assert(instInfo)
 				if not instInfo.isClassLookup[self] then
 					error(format("Attempt to call class method on non-object (%s)!", tostring(inst)), 2)
 				end

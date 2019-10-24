@@ -223,16 +223,8 @@ function private.SelectionFrameOnHide(frame)
 end
 
 function private.ScanOnFilterDone(self, filter, numNewResults)
-	-- 这里的 self 是 scanFrame
 	if numNewResults > 0 then
 		TSM.Sound.PlaySound(TSM.db.global.sniperOptions.sniperSound)
-		print("找到", numNewResults, "件物品，暂停搜索")
-		-- TOX: 有结果，暂停查找，等待用户操作，任何用户操作都可以终止
-		private.fsm:ProcessEvent("EV_SCAN_PAUSE")
-	else
-		-- TOX: 搜索结果为空，自动重搜
-		print("未找到任何物品，继续搜索")
-		private.fsm:ProcessEvent("EV_SCAN_CONTINUE")
 	end
 end
 
@@ -278,6 +270,7 @@ function private.ActionButtonOnClick(button)
 end
 
 function private.SkipButtonOnClick(button)
+	print("skip button click")
 	private.fsm:ProcessEvent("EV_SKIP_CLICKED")
 end
 
@@ -453,6 +446,7 @@ function private.FSMCreate()
 		)
 		:AddState(TSMAPI_FOUR.FSM.NewState("ST_RUNNING_SCAN")
 			:SetOnEnter(function(context)
+				print("inside ST_RUNNING_SCAN")
 				private.hasLastScan = context.scanType
 				if not context.query then
 					context.query = context.db:NewQuery()
@@ -466,6 +460,8 @@ function private.FSMCreate()
 					context.scanFrame:GetElement("bottom.progressBar"):SetProgressIconHidden(false)
 				end
 				UpdateScanFrame(context)
+
+				print("do scan")
 				TSMAPI_FOUR.Thread.SetCallback(context.scanThreadId, private.FSMScanCallback)
 				TSMAPI_FOUR.Thread.Start(context.scanThreadId, context.auctionScan)
 				TSMAPI_FOUR.Delay.AfterTime("sniperPhaseDetect", PHASED_TIME, private.FSMPhasedCallback)
@@ -478,22 +474,25 @@ function private.FSMCreate()
 			:AddTransition("ST_SELECT_AUCTION")
 			:AddTransition("ST_INIT")
 			:AddEvent("EV_SCAN_COMPLETE", function(context)
-				if context.scanFrame and context.scanFrame:GetElement("auctions"):GetSelectedRecord() then
-					-- print("CONTINUE SCAN")
-					return "ST_FINDING_AUCTION"
+
+				local numResults = context.auctionScan:GetNumResults()
+				if numResults > 0 then
+
+					local latest = context.scanFrame:GetElement("auctions"):GetLatestRecord()
+					if latest then
+
+						local num = context.auctionScan:GetNumCanBuy(latest)
+						print("201 当前选中物品:", latest:GetField("hash"), "共有",num,"个")
+						context.scanFrame:GetElement("auctions"):SetSelectedRecord(latest)
+						return "ST_SELECT_AUCTION"
+					else
+						print("找到", numResults, "件物品，但是没有新的物品")
+						return "ST_RESULTS"
+					end
 				else
-					-- TOX: 将重搜功能移动到 FilterComplete 阶段
-					-- return "ST_RESULTS"
-					-- print("PAUSE")
+					print("继续搜索")
+					return "ST_RESULTS"
 				end
-			end)
-			:AddEvent("EV_SCAN_PAUSE", function(context)
-				-- print("inside EV_SCAN_PAUSE")
-				return "ST_SELECT_AUCTION"
-			end)
-			:AddEvent("EV_SCAN_CONTINUE", function(context)
-				-- print("inside EV_SCAN_CONTINUE")
-				return "ST_RESULTS"
 			end)
 			:AddEvent("EV_SCAN_FAILED", TSMAPI_FOUR.FSM.SimpleTransitionEventHandler("ST_INIT"))
 			:AddEvent("EV_PHASED", function()
@@ -501,6 +500,7 @@ function private.FSMCreate()
 				return "ST_INIT"
 			end)
 			:AddEvent("EV_AUCTION_SELECTION_CHANGED", function(context)
+				print("EV_AUCTION_SELECTION_CHANGED 1")
 				assert(context.scanFrame)
 				if context.scanFrame:GetElement("auctions"):GetSelectedRecord() then
 					-- the user selected something, so cancel the current scan
@@ -510,6 +510,8 @@ function private.FSMCreate()
 		)
 		:AddState(TSMAPI_FOUR.FSM.NewState("ST_RESULTS")
 			:SetOnEnter(function(context)
+				print("ST_RESULTS")
+				assert(context.scanFrame)
 				TSMAPI_FOUR.Thread.Kill(context.scanThreadId)
 				-- find item
 				context.findAuction = nil
@@ -525,79 +527,76 @@ function private.FSMCreate()
 				UpdateScanFrame(context)
 				local selection = context.scanFrame and context.scanFrame:GetElement("auctions"):GetSelectedRecord()
 				if selection then
-					return "ST_FINDING_AUCTION"
+					print("ST_RESULTS -> ST_SELECT_AUCTION")
+					return "ST_SELECT_AUCTION"
 				else
+					-- print("goto ST_RUNNING_SCAN")
+					print("ST_RESULTS -> ST_RUNNING_SCAN")
 					return "ST_RUNNING_SCAN"
 				end
 			end)
 			:AddTransition("ST_RUNNING_SCAN")
-			:AddTransition("ST_AUCTION_FOUND")
-			:AddTransition("ST_FINDING_AUCTION")
+			:AddTransition("ST_SELECT_AUCTION")
 			:AddTransition("ST_INIT")
 		)
 		:AddState(TSMAPI_FOUR.FSM.NewState("ST_SELECT_AUCTION")
 			:SetOnEnter(function(context)
-				-- print("inside ST_SELECT_AUCTION")
+				print("inside ST_SELECT_AUCTION")
 				assert(context.scanFrame)
-				local latest = context.scanFrame:GetElement("auctions"):GetLatestRecord()
-				if latest then
-					--- 自动选中一个物品
-					print("当前选中物品:", latest:GetField("hash"))
-					--- print("SET SELECTION", latest:GetField("hash"))
-					context.scanFrame:GetElement("auctions"):SetSelectedRecord(latest)
+				local selected = context.scanFrame:GetElement("auctions"):GetSelectedRecord()
+				if selected then
+					---一个物品 自动选中
+					local num = context.auctionScan:GetNumCanBuy(selected)
+					print("201 当前选中物品:", selected:GetField("hash"), "共有",num,"个")
+					context.scanFrame:GetElement("auctions"):SetSelectedRecord(selected)
+					context.numFound = num;
+					return "ST_BIDDING_BUYING"
 				else
-					print("没有符合条件的物品，继续搜索")
+					print("404 已卖完，继续搜索")
 					return "ST_RESULTS"
 				end
 			end)
+			:AddTransition("ST_INIT")
 			:AddTransition("ST_RESULTS")
 			:AddTransition("ST_FINDING_AUCTION")
+			:AddTransition("ST_BIDDING_BUYING")
+			:AddEvent("EV_SKIP_CLICKED", function(context)
+				print("INSIDE EV_SKIP_CLICKED in ST_SELECT_AUCTION")
+				-- unselect to trigger scan
+				context.scanFrame:GetElement("auctions"):SetSelectedRecord(nil)
+			end)
+			:AddEvent("EV_AUCTION_SELECTION_CHANGED", function(context)
+				print("inside EV_AUCTION_SELECTION_CHANGED 2222")
+				assert(context.scanFrame)
+				print("inside EV_AUCTION_SELECTION_CHANGED 2222 1")
+				local selected = context.scanFrame:GetElement("auctions"):GetSelectedRecord();
+				print("inside EV_AUCTION_SELECTION_CHANGED 2222 2")
+				if selected then
+					-- find record from current list
+
+					print("inside EV_AUCTION_SELECTION_CHANGED 2222 31")
+					local idx = context.auctionScan:GetRecordIndex(selected)
+					print("inside EV_AUCTION_SELECTION_CHANGED 2222 idx", idx)
+					if idx then
+						print("123 Found item index from list", idx, " just need click one button to bid")
+						context.findAuction = selected
+						context.findIndex = idx
+						context.findHash = selected:GetField("hash")
+						context.numFound = context.auctionScan:GetNumCanBuy(selected) or 1
+						return "ST_BIDDING_BUYING"
+					else
+						print("NO INDEX", selected:GetField("hash"))
+						return "ST_FINDING_AUCTION"
+					end
+				else
+					print("FOUND item", selected:GetField("hash"))
+					return "ST_RESULTS"
+				end
+			end)
 		)
-		--:AddState(TSMAPI_FOUR.FSM.NewState("ST_SELECT_AUCTION")
-		--	:SetOnEnter(function(context)
-		--		-- TODO: 增加 20 秒计时器，时间到了继续搜索
-		--		-- print("inside ST_SELECT_AUCTION")
-		--
-		--		assert(context.scanFrame)
-		--
-		--		-- TOX: 从当前的搜索结果中自动选取一个物品
-		--
-		--		-- 当前的搜索结果
-		--		local results = context.auctionScan:GetNewRecords()
-		--
-		--		assert(results)
-		--
-		--		-- find the best item from results
-		--		local results = context.scanFrame:GetElement("auctions"):GetFiltersRecordIndex()
-		--		local best = context.scanFrame:GetElement("auctions"):GetLatestRecord()
-		--
-		--		if best then
-		--			--- 自动选中一个物品
-		--			print("record.hashNoSeller =", best:GetField("hashNoSeller"))
-		--			print("record.hash =", best:GetField("hash"))
-		--
-		--			--- update context
-		--			context.findAuction = best
-		--			context.findHash = best:GetField("hash")
-		--			context.findResult = results
-		--			context.findIndex = 0;
-		--			context.numFound = context.auctionScan:GetNumCanBuy(context.findAuction) or math.huge
-		--
-		--			--- set selection
-		--			-- 当 context.findAuction == latest 时 SetSelectedRecord 不会触发 ST_FINDING_AUCTION
-		--			context.scanFrame:GetElement("auctions"):SetSelectedRecord(latest)
-		--
-		--			return "ST_BIDDING_BUYING"
-		--		else
-		--
-		--			return "ST_RESULTS"
-		--		end
-		--	end)
-		--	:AddTransition("ST_BIDDING_BUYING")
-		--	:AddTransition("ST_RESULTS")
-		--)
 		:AddState(TSMAPI_FOUR.FSM.NewState("ST_FINDING_AUCTION")
 			:SetOnEnter(function(context)
+				print("inside ST_FINDING_AUCTION")
 				assert(context.scanFrame)
 				context.findAuction = context.scanFrame:GetElement("auctions"):GetSelectedRecord()
 				context.findHash = context.findAuction:GetField("hash")
@@ -614,45 +613,34 @@ function private.FSMCreate()
 				TSM.Shopping.SearchCommon.StopFindAuction()
 			end)
 			:AddTransition("ST_RESULTS")
-			:AddTransition("ST_FINDING_AUCTION")
+			:AddTransition("ST_SELECT_AUCTION")
 			:AddTransition("ST_AUCTION_FOUND")
 			:AddTransition("ST_AUCTION_NOT_FOUND")
 			:AddTransition("ST_INIT")
 			:AddEvent("EV_AUCTION_FOUND", TSMAPI_FOUR.FSM.SimpleTransitionEventHandler("ST_AUCTION_FOUND"))
 			:AddEvent("EV_AUCTION_NOT_FOUND", TSMAPI_FOUR.FSM.SimpleTransitionEventHandler("ST_AUCTION_NOT_FOUND"))
 			:AddEvent("EV_AUCTION_SELECTION_CHANGED", function(context)
+
+				print("EV_AUCTION_SELECTION_CHANGED 3")
 				assert(context.scanFrame)
 				local selected = context.scanFrame:GetElement("auctions"):GetSelectedRecord();
 				if selected then
 					-- find record from current list
-					local index = context.auctionScan.GetRecordIndex(selected)
-					if index then
-						print("Found item index from list", index, " just need click one button to bid")
-						context.findAuction = selected;
-						context.findIndex = index
+					local idx = context.auctionScan:GetRecordIndex(selected)
+					if idx then
+						print("222 Found item index from list", idx, " just need click one button to bid")
+						context.findAuction = selected
+						context.findIndex = idx
+						context.findHash = selected:GetField("hash")
+						context.numFound = context.auctionScan:GetNumCanBuy(selected) or math.huge
+						return "ST_BIDDING_BUYING"
 					else
-						return "ST_FINDING_AUCTION"
+						return "ST_SELECT_AUCTION"
 					end
-
 				else
 					return "ST_RESULTS"
 				end
-				--local auctions = context.scanFrame:GetElement("auctions")
-				--local selected = auctions:GetSelectedRecord()
-				--if selected then
-				--	-- find index for current selected item
-				--	local index = auctions:GetRecordIndex(selected)
-				--	if index then
-				--		-- match current setup
-				--		return
-				--	else
-				--		-- item is not in list, do a new search
-				--		return "ST_FINDING_AUCTION"
-				--	end
-				--else
-				--	-- dont select any thing, continue search
-				--	return "ST_RESULTS"
-				--end
+
 			end)
 			:AddEvent("EV_AUCTION_ROW_REMOVED", function(context, row)
 				local removingFindAuction = context.findAuction == row
@@ -728,10 +716,14 @@ function private.FSMCreate()
 			:AddTransition("ST_CONFIRMING_BID_BUY")
 			:AddTransition("ST_RESULTS")
 			:AddTransition("ST_INIT")
-			:AddEvent("EV_AUCTION_SELECTION_CHANGED", TSMAPI_FOUR.FSM.SimpleTransitionEventHandler("ST_RESULTS"))
+			:AddEvent("EV_AUCTION_SELECTION_CHANGED", function(context)
+				print("INSIDE EV_AUCTION_SELECTION_CHANGED 4444")
+				-- unselect to trigger scan
+				return "ST_RESULTS"
+			end)
 			:AddEvent("EV_ACTION_CLICKED", TSMAPI_FOUR.FSM.SimpleTransitionEventHandler("ST_PLACING_BID_BUY"))
 			:AddEvent("EV_SKIP_CLICKED", function(context)
-				-- print("INSIDE EV_SKIP_CLICKED")
+				 print("INSIDE EV_SKIP_CLICKED")
 				-- unselect to trigger scan
 				context.scanFrame:GetElement("auctions"):SetSelection(nil)
 			end)
@@ -751,6 +743,7 @@ function private.FSMCreate()
 		:AddState(TSMAPI_FOUR.FSM.NewState("ST_PLACING_BID_BUY")
 			:SetOnEnter(function(context)
 				-- get item from table
+				print("inside ST_PLACING_BID_BUY")
 				local index = context.findIndex or tremove(context.findResult, #context.findResult)
 				assert(index)
 				if context.auctionScan:ValidateIndex(index, context.findAuction, true) then

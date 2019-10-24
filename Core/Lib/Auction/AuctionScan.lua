@@ -41,6 +41,7 @@ function AuctionScan.__init(self)
 	self._onFilterDoneHandler = nil
 	self._customFilterFunc = nil
 	self._findFilter = nil
+	self._results = {}
 	self._findResult = {}
 	self._cancelled = false
 end
@@ -72,6 +73,7 @@ function AuctionScan._Release(self)
 	self._customFilterFunc = nil
 	self._cancelled = false
 	wipe(self._findResult)
+	wipe(self._results)
 end
 
 
@@ -117,6 +119,14 @@ end
 
 function AuctionScan.GetNumFilters(self)
 	return #self._filters
+end
+
+function AuctionScan.GetNumResults(self)
+	return #self._results
+end
+
+function AuctionScan.GetResults(self)
+	return self._results
 end
 
 function AuctionScan.FilterIterator(self)
@@ -216,10 +226,9 @@ function AuctionScan.ValidateIndex(self, index, validateRow, noSeller)
 	return validateRow:GetField(noSeller and "hashNoSeller" or "hash") == self:_GetAuctionRowHash(index, noSeller)
 end
 
-function AuctionScan.GetRecordIndex(self, row, noSeller)
-	local found = false
+function AuctionScan.GetRecordIndex(self, row)
 	for i = 1, GetNumAuctionItems("list") do
-		if self:ValidateIndex(i, row, noSeller) then
+		if self:ValidateIndex(i, row, false) then
 			return i
 		end
 	end
@@ -613,6 +622,7 @@ function private.ScanQueryThreaded(auctionScan)
 	-- loop through each filter to perform
 	auctionScan:_SetFiltersScanned(0)
 	auctionScan._cancelled = false
+	wipe(auctionScan._results)
 	local allSuccess = true
 	for i, filter in ipairs(auctionScan._filters) do
 		-- update the sort for this filter
@@ -665,6 +675,9 @@ function private.ScanQueryThreaded(auctionScan)
 								:Equal("filterId", private.filterId)
 							if newQuery:Count() == 1 then
 								numNewResults = numNewResults + 1
+								for _, newRow in newQuery:Iterator() do
+									tinsert(auctionScan._results, newRow)
+								end
 							end
 							newQuery:Release()
 						end

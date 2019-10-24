@@ -182,7 +182,9 @@ function ScrollingTable.SetSelection(self, selection)
 	local index = nil
 	if selection then
 		index = TSM.Table.KeyByValue(self._data, selection)
-		assert(index)
+		if not index then
+			return self
+		end
 	end
 	self._selection = selection
 	if selection then

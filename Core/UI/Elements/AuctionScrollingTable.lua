@@ -245,7 +245,7 @@ end
 function AuctionScrollingTable.GetLatestRecord(self)
 	local selection = self._latestRecord
 	self._latestRecord = nil
-	return selection
+	return selection or nil
 end
 
 --- Gets the selected auction record.
@@ -303,7 +303,6 @@ function AuctionScrollingTable._UpdateData(self)
 	end
 	local sortKey = self._sortCol
 	local sortCol = self._tableInfo:_GetSortColById(sortKey)
-	self._latestRecord = nil
 	wipe(self._data)
 	wipe(self._baseRecordByItem)
 	wipe(self._baseRecordByHash)
