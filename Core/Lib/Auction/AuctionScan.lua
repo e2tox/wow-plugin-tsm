@@ -226,13 +226,14 @@ function AuctionScan.ValidateIndex(self, index, validateRow, noSeller)
 	return validateRow:GetField(noSeller and "hashNoSeller" or "hash") == self:_GetAuctionRowHash(index, noSeller)
 end
 
-function AuctionScan.GetRecordIndex(self, row)
+function AuctionScan.FindAuctionsOnCurrentPage(self, row)
+	local auctions = {}
 	for i = 1, GetNumAuctionItems("list") do
-		if self:ValidateIndex(i, row, false) then
-			return i
+		if self:ValidateIndex(i, row, true) then
+			tinsert(auctions, i)
 		end
 	end
-	return nil
+	return auctions
 end
 
 function AuctionScan.GetProgress(self)
