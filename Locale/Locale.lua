@@ -14962,9 +14962,9 @@ TSM.L["TSM failed to scan some auctions. Please rerun the scan."] = "TSM未能�
 --[[Translation missing --]]
 TSM.L["TSM is currently rebuilding its item cache which may cause FPS drops and result in TSM not being fully functional until this process is complete. This is normal and typically takes less than a minute."] = "TSM is currently rebuilding its item cache which may cause FPS drops and result in TSM not being fully functional until this process is complete. This is normal and typically takes less than a minute."
 TSM.L["TSM is missing important information from the TSM Desktop Application. Please ensure the TSM Desktop Application is running and is properly configured."] = "TSM缺少TSM桌面应用程序的重要信息。 请确保TSM桌面应用程序正在运行且配置正确。"
-TSM.L["TSM Mailing"] = "E2 邮件"
-TSM.L["TSM TASK LIST"] = "E2 任务列表"
-TSM.L["TSM Vendoring"] = "E2 Vendoring"
+TSM.L["TSM Mailing"] = "邮件"
+TSM.L["TSM TASK LIST"] = "任务列表"
+TSM.L["TSM Vendoring"] = "商人"
 TSM.L["TSM Version Info:"] = "版本信息："
 TSM.L["TSM_Accounting detected that you just traded %s %s in return for %s. Would you like Accounting to store a record of this trade?"] = "TSM_Accounting检测到您刚刚交易%s%s以赚取%s。 您希望Accounting模块存储此交易的记录吗？"
 TSM.L["TSM4"] = "E2"

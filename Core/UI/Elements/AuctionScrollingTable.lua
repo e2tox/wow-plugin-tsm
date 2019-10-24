@@ -243,9 +243,9 @@ end
 
 --- TOX: Get latest record
 function AuctionScrollingTable.GetLatestRecord(self)
-	local selection = self._latestRecord
+	local record = self._latestRecord
 	self._latestRecord = nil
-	return selection or nil
+	return record or nil
 end
 
 --- Gets the selected auction record.
@@ -312,7 +312,6 @@ function AuctionScrollingTable._UpdateData(self)
 	local hashes = TSM.TempTable.Acquire()
 	local sortAscending = self._sortAscending
 	local showingAltTitles = self._tableInfo:_GetTitleIndex() ~= 1
-
 	for _, record in self._query:Iterator() do
 		local baseItemString = record.baseItemString
 		local hash = record.hash
@@ -372,7 +371,7 @@ function AuctionScrollingTable._UpdateData(self)
 		if not self._baseRecordByHash[hash] or record.filterId > self._baseRecordByHash[hash].filterId then
 			self._baseRecordByHash[hash] = record
 
-			-- 选择命中的第一个item
+			-- 选择第一个
 			if not self._latestRecord then
 				if not self._latestRecordByHash[hash] then
 					self._latestRecord = record

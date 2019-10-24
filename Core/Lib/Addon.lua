@@ -151,7 +151,7 @@ end
 
 function Addon.Print(self, str)
 	-- FIXME: hard-coded color
-	self:PrintRaw("|cff33fc99"..tostring(self).."|r: "..str)
+	self:PrintRaw("|cff33ff99"..tostring(self).."|r: "..str)
 end
 
 function Addon.Printf(self, ...)

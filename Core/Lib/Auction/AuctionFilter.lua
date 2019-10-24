@@ -385,13 +385,10 @@ function AuctionFilter._DoAuctionQueryThreaded(self)
 		if self._sniperLastPage then
 			-- scan the last page
 			local lastPage = max(ceil(select(2, GetNumAuctionItems("list")) / NUM_AUCTION_ITEMS_PER_PAGE) - 1, 0)
-			print(41, lastPage)
 			while true do
 				-- wait for the AH to be ready
 				while not CanSendAuctionQuery() do
-					local cancelled = self._scan:_IsCancelled();
-					print(42, cancelled)
-					if cancelled then
+					if self._scan:_IsCancelled() then
 						TSM:LOG_INFO("Stopping canelled scan")
 						return false
 					end
@@ -399,12 +396,9 @@ function AuctionFilter._DoAuctionQueryThreaded(self)
 				end
 				-- query the AH
 				QueryAuctionItems(nil, nil, nil, lastPage)
-				print(43, lastPage)
 				-- wait for the update event
 				TSMAPI_FOUR.Thread.WaitForEvent("AUCTION_ITEM_LIST_UPDATE")
 				local newLastPage = max(ceil(select(2, GetNumAuctionItems("list")) / NUM_AUCTION_ITEMS_PER_PAGE) - 1, 0)
-
-				print(44, newLastPage, lastPage)
 				if newLastPage == lastPage then
 					break
 				end

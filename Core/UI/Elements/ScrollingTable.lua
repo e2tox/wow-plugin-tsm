@@ -183,10 +183,13 @@ function ScrollingTable.SetSelection(self, selection)
 	if selection then
 		index = TSM.Table.KeyByValue(self._data, selection)
 		if not index then
+			error("Unable to select non-existed object", 2)
 			return self
 		end
 	end
 	self._selection = selection
+	print("当前选中物品:", selection:GetField("hash"))
+
 	if selection then
 		-- set the scroll so that the selection is visible if necessary
 		local rowHeight = self:_GetStyle("rowHeight")
