@@ -62,7 +62,7 @@ function AuctionScrollingTable.__init(self)
 	self.__super:__init()
 	self._query = nil
 	self._marketValueFunc = nil
-	self._latestRecord = nil
+	self._latestRecord = {}
 	self._latestRecordByHash = {}
 	self._expanded = {}
 	self._baseRecordByItem = {}
@@ -241,11 +241,23 @@ function AuctionScrollingTable.SetSelectedRecord(self, record)
 	return self
 end
 
+function AuctionScrollingTable.ResetLatest(self)
+	wipe(self._latestRecord)
+	self._latestRecord = {}
+end
+
 --- TOX: Get latest record
 function AuctionScrollingTable.GetLatestRecord(self)
-	local record = self._latestRecord
-	self._latestRecord = nil
-	return record or nil
+    local max =  #self._latestRecord
+	if max > 0 then
+		local item = tremove(self._latestRecord, max)
+--		print("still got", #self._latestRecord, "max", max)
+        wipe(self._latestRecord)
+        self._latestRecord = {}
+		return item
+	else
+		return nil
+	end
 end
 
 --- Gets the selected auction record.
@@ -309,13 +321,29 @@ function AuctionScrollingTable._UpdateData(self)
 	wipe(self._numAuctionsByItem)
 	wipe(self._numAuctionsByHash)
 
+--	print("update data")
+
 	local hashes = TSM.TempTable.Acquire()
+
+--    print("update data 2")
 	local sortAscending = self._sortAscending
 	local showingAltTitles = self._tableInfo:_GetTitleIndex() ~= 1
+
+--    print("update data 3")
 	for _, record in self._query:Iterator() do
+
+--        print("update data 4")
+
 		local baseItemString = record.baseItemString
+--        print("baseItemString", baseItemString)
+
 		local hash = record.hash
-		local hashNoSeller = record.hashNoSeller
+--        print("hash", hash)
+
+        local hashNoSeller = record.hashNoSeller
+--        print("hashNoSeller", hashNoSeller)
+--        assert("hashNoSeller")
+
 		local sortValue = private.sortContext.sortValueByHash[hash]
 		if not sortValue then
 			if sortKey == "item" then
@@ -373,10 +401,8 @@ function AuctionScrollingTable._UpdateData(self)
 			self._baseRecordByHash[hash] = record
 
 			-- 选择第一个
-			if not self._latestRecord then
-				if not self._latestRecordByHash[hashNoSeller] then
-					self._latestRecord = record
-				end
+			if not self._latestRecordByHash[hashNoSeller] then
+				tinsert(self._latestRecord, record)
 			end
 			self._latestRecordByHash[hashNoSeller] = true
 

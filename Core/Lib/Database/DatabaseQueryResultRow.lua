@@ -13,6 +13,7 @@ local private = { context = {} }
 local ROW_PROTOTYPE = {
 	_Acquire = function(self, db, query, isNewRow)
 		local context = private.context[self]
+		assert(db)
 		context.db = db
 		context.query = query
 		context.isNewRow = isNewRow
