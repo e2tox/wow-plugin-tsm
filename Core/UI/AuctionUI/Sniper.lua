@@ -471,6 +471,7 @@ function private.FSMCreate()
 				TSMAPI_FOUR.Delay.Cancel("sniperPhaseDetect")
 			end)
 			:AddTransition("ST_RESULTS")
+			:AddTransition("ST_CHECK_SELECTION")
 			:AddTransition("ST_FINDING_AUCTION")
 			:AddTransition("ST_INIT")
 			:AddEvent("EV_SCAN_COMPLETE", function(context)
@@ -488,13 +489,13 @@ function private.FSMCreate()
 --				if numResults > 0 then
 --				end
 
-				if not auctions:GetSelectedRecord() then
-					-- help user to select a latest item if user didn't select anything
-					local best = auctions:GetLatestRecord()
-					if best then
-						auctions:SetSelectedRecord(best)
-					end
-				end
+--				if not auctions:GetSelectedRecord() then
+--					-- help user to select a latest item if user didn't select anything
+--					local best = auctions:GetLatestRecord()
+--					if best then
+--						auctions:SetSelectedRecord(best)
+--					end
+--				end
 
 
 				if auctions:GetSelectedRecord() then
@@ -558,9 +559,11 @@ function private.FSMCreate()
 					print("201 当前选中物品:", selected.hash, "共有", num, "个")
 					context.scanFrame:GetElement("auctions"):SetSelectedRecord(selected)
 					context.numFound = num;
+					print("ST_CHECK_SELECTION -> ST_BIDDING_BUYING", num)
 					return "ST_BIDDING_BUYING"
 				else
 					print("404 已卖完，继续搜索")
+					print("ST_CHECK_SELECTION -> ST_RESULTS")
 					return "ST_RESULTS"
 				end
 			end)
