@@ -345,6 +345,7 @@ function private.FSMCreate()
 		local bottom = context.scanFrame:GetElement("bottom")
 		bottom:GetElement("actionBtn")
 			:SetText(actionText)
+			:SetStyle("iconTexturePack", "iconPack.14x14/Post")
 			:SetDisabled(context.buttonsDisabled)
 		bottom:GetElement("progressBar")
 			:SetProgress(context.progress)
@@ -507,7 +508,7 @@ function private.FSMCreate()
 				return "ST_INIT"
 			end)
 			:AddEvent("EV_AUCTION_SELECTION_CHANGED", function(context)
-				print("ST_RUNNING_SCAN -> EV_AUCTION_SELECTION_CHANGED")
+--				print("ST_RUNNING_SCAN -> EV_AUCTION_SELECTION_CHANGED")
 				assert(context.scanFrame)
 				if context.scanFrame:GetElement("auctions"):GetSelectedRecord() then
 					-- the user selected something, so cancel the current scan
@@ -575,7 +576,7 @@ function private.FSMCreate()
 			:SetOnEnter(function(context)
 				assert(context.scanFrame)
 				context.findAuction = context.scanFrame:GetElement("auctions"):GetSelectedRecord()
-				print("ST_FINDING_AUCTION", context.findAuction.hash)
+--				print("ST_FINDING_AUCTION", context.findAuction.hash)
 				context.findHash = context.findAuction:GetField("hash")
 				context.progress = 0
 				context.progressText = L["Finding Selected Auction"]
@@ -684,14 +685,20 @@ function private.FSMCreate()
 				context.progress = context.numConfirmed / context.numFound
 				context.progressText = L["Scan Paused"].." - "..progressText
 				context.buttonsDisabled = numCanAction == 0
-				if selection and numCanAction > 0 then
-					print("可以购买", selection:GetField("itemString"), selection:GetField("itemLink"), "一口价", TSM.Money.ToString(selection:GetField("itemBuyout")))
-				end
+
 				if context.scanFrame then
 					context.scanFrame:GetElement("bottom.progressBar"):SetProgressIconHidden(context.numConfirmed == context.numActioned)
 				end
 				UpdateBuyButtons(context, selection)
 				UpdateScanFrame(context)
+
+				if context.scanFrame and selection and numCanAction > 0 then
+					local actionBtn = context.scanFrame:GetElement("bottom.actionBtn")
+					local buyout = selection:GetField("itemBuyout")
+					local text = TSM.Money.ToString(buyout, nil, "OPT_ICON")
+					actionBtn:SetStyle("iconTexturePack", ""):SetText(text):Draw()
+					print("可购买", selection:GetField("itemLink"), "一口价", text)
+				end
 			end)
 			:AddTransition("ST_BIDDING_BUYING")
 			:AddTransition("ST_PLACING_BID_BUY")

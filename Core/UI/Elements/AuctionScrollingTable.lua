@@ -315,6 +315,7 @@ function AuctionScrollingTable._UpdateData(self)
 	for _, record in self._query:Iterator() do
 		local baseItemString = record.baseItemString
 		local hash = record.hash
+		local hashNoSeller = record.hashNoSeller
 		local sortValue = private.sortContext.sortValueByHash[hash]
 		if not sortValue then
 			if sortKey == "item" then
@@ -373,11 +374,11 @@ function AuctionScrollingTable._UpdateData(self)
 
 			-- 选择第一个
 			if not self._latestRecord then
-				if not self._latestRecordByHash[hash] then
+				if not self._latestRecordByHash[hashNoSeller] then
 					self._latestRecord = record
 				end
 			end
-			self._latestRecordByHash[hash] = true
+			self._latestRecordByHash[hashNoSeller] = true
 
 			-- need to make sure _baseRecordByHash and _baseRecordByItem are kept in sync
 			if private.sortContext.baseRecordSortValues[baseItemString] == sortValue then
