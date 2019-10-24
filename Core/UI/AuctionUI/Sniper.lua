@@ -446,7 +446,6 @@ function private.FSMCreate()
 		)
 		:AddState(TSMAPI_FOUR.FSM.NewState("ST_RUNNING_SCAN")
 			:SetOnEnter(function(context)
-				print("inside ST_RUNNING_SCAN")
 				private.hasLastScan = context.scanType
 				if not context.query then
 					context.query = context.db:NewQuery()
@@ -460,8 +459,6 @@ function private.FSMCreate()
 					context.scanFrame:GetElement("bottom.progressBar"):SetProgressIconHidden(false)
 				end
 				UpdateScanFrame(context)
-
-				print("do scan")
 				TSMAPI_FOUR.Thread.SetCallback(context.scanThreadId, private.FSMScanCallback)
 				TSMAPI_FOUR.Thread.Start(context.scanThreadId, context.auctionScan)
 				TSMAPI_FOUR.Delay.AfterTime("sniperPhaseDetect", PHASED_TIME, private.FSMPhasedCallback)
@@ -474,13 +471,13 @@ function private.FSMCreate()
 			:AddTransition("ST_SELECT_AUCTION")
 			:AddTransition("ST_INIT")
 			:AddEvent("EV_SCAN_COMPLETE", function(context)
-
+				print("EV_SCAN_COMPLETE")
 				local numResults = context.auctionScan:GetNumResults()
 				if numResults > 0 then
 
 					local latest = context.scanFrame:GetElement("auctions"):GetLatestRecord()
 					if latest then
-
+						print("GetNumCanBuy")
 						local num = context.auctionScan:GetNumCanBuy(latest)
 						print("201 当前选中物品:", latest:GetField("hash"), "共有",num,"个")
 						context.scanFrame:GetElement("auctions"):SetSelectedRecord(latest)
