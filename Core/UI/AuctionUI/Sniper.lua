@@ -187,10 +187,9 @@ function private.GetScanFrame()
 				:SetScript("OnClick", private.SkipButtonOnClick)
 			)
 			:AddChild(TSMAPI_FOUR.UI.NewElement("ActionButton", "restartBtn")
-				:SetStyle("width", 135)
+				:SetStyle("width", 40)
 				:SetStyle("height", 26)
 				:SetStyle("iconTexturePack", "iconPack.14x14/Reset")
-				:SetText(L["RESTART"])
 				:SetScript("OnClick", private.RestartButtonOnClick)
 			)
 		)
@@ -356,10 +355,12 @@ function private.FSMCreate()
 			auctionList:SetSelectedRecord(context.findAuction)
 		end
 		local resumeBtn = context.scanFrame:GetElement("header.resumeBtn")
+		local skipBtn = context.scanFrame:GetElement("bottom.skipBtn")
 		local title = context.scanFrame:GetElement("header.title")
 		if auctionList:GetSelectedRecord() then
 			resumeBtn:SetDisabled(false)
 			resumeBtn:Show()
+			skipBtn:SetDisabled(false)
 			if context.scanType == "buyout" then
 				title:SetText(L["Buyout Sniper Paused"])
 			elseif context.scanType == "bid" then
@@ -370,6 +371,7 @@ function private.FSMCreate()
 		else
 			resumeBtn:SetDisabled(true)
 			resumeBtn:Hide()
+			skipBtn:SetDisabled(true)
 			if context.scanType == "buyout" then
 				title:SetText(L["Buyout Sniper Running"])
 			elseif context.scanType == "bid" then
@@ -385,19 +387,19 @@ function private.FSMCreate()
 			return
 		end
 		if selection and selection.seller == UnitName("player") then
-			context.scanFrame:GetElement("bottom.actionBtn"):SetDisabled(true)
-				:Draw()
+			context.scanFrame:GetElement("bottom.actionBtn"):SetDisabled(true):Draw()
+			context.scanFrame:GetElement("bottom.skipBtn"):SetDisabled(false):Draw()
 		elseif selection and selection.isHighBidder then
 			if context.scanType == "buyout" then
-				context.scanFrame:GetElement("bottom.actionBtn"):SetDisabled(false)
-					:Draw()
+				context.scanFrame:GetElement("bottom.actionBtn"):SetDisabled(false):Draw()
+				context.scanFrame:GetElement("bottom.skipBtn"):SetDisabled(false):Draw()
 			else
-				context.scanFrame:GetElement("bottom.actionBtn"):SetDisabled(true)
-					:Draw()
+				context.scanFrame:GetElement("bottom.actionBtn"):SetDisabled(true):Draw()
+				context.scanFrame:GetElement("bottom.skipBtn"):SetDisabled(false):Draw()
 			end
 		else
-			context.scanFrame:GetElement("bottom.actionBtn"):SetDisabled(false)
-				:Draw()
+			context.scanFrame:GetElement("bottom.actionBtn"):SetDisabled(false):Draw()
+			context.scanFrame:GetElement("bottom.skipBtn"):SetDisabled(false):Draw()
 		end
 	end
 	local function ScanOnFilterDone(self, filter, numNewResults)
@@ -656,12 +658,16 @@ function private.FSMCreate()
 			:AddTransition("ST_CONFIRMING_BID_BUY")
 			:AddTransition("ST_RESULTS")
 			:AddTransition("ST_INIT")
-			:AddEvent("EV_AUCTION_SELECTION_CHANGED", TSMAPI_FOUR.FSM.SimpleTransitionEventHandler("ST_RESULTS"))
+			:AddEvent("EV_AUCTION_SELECTION_CHANGED", function()
+				print("ST_BIDDING_BUYING -> EV_AUCTION_SELECTION_CHANGED")
+				return "ST_RESULTS"
+			end)
 			:AddEvent("EV_ACTION_CLICKED", TSMAPI_FOUR.FSM.SimpleTransitionEventHandler("ST_PLACING_BID_BUY"))
 			:AddEvent("EV_SKIP_CLICKED", function(context)
-				print("INSIDE EV_SKIP_CLICKED")
+				print("ST_BIDDING_BUYING -> EV_SKIP_CLICKED")
 				-- unselect to trigger scan
 				context.scanFrame:GetElement("auctions"):SetSelectedRecord(nil)
+				return "ST_RESULTS"
 			end)
 			:AddEvent("EV_MSG", function(context, msg)
 				if msg == LE_GAME_ERR_AUCTION_HIGHER_BID or msg == LE_GAME_ERR_ITEM_NOT_FOUND or msg == LE_GAME_ERR_AUCTION_BID_OWN or msg == LE_GAME_ERR_NOT_ENOUGH_MONEY then
