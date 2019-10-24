@@ -172,7 +172,7 @@ function private.GetScanFrame()
 				:SetStyle("margin.right", 8)
 				:SetStyle("iconTexturePack", "iconPack.14x14/Post")
 				:SetText(strupper(BID))
-				:SetDisabled()
+				:SetDisabled(true)
 				:DisableClickCooldown(true)
 				:SetScript("OnClick", private.ActionButtonOnClick)
 			)
@@ -182,7 +182,7 @@ function private.GetScanFrame()
 				:SetStyle("margin.right", 8)
 				:SetStyle("iconTexturePack", "iconPack.14x14/Skip")
 				:SetText(L["SKIP"])
-				:SetDisabled(true)
+				:SetDisabled(false)
 				:DisableClickCooldown(true)
 				:SetScript("OnClick", private.SkipButtonOnClick)
 			)
@@ -475,7 +475,15 @@ function private.FSMCreate()
 			:AddTransition("ST_CHECK_SELECTION")
 			:AddTransition("ST_INIT")
 			:AddEvent("EV_SCAN_COMPLETE", function(context)
-				if context.scanFrame and context.scanFrame:GetElement("auctions"):GetSelectedRecord() then
+
+				local auctions = context.scanFrame:GetElement("auctions")
+
+				local best = auctions:GetLatestRecord()
+				if best then
+					auctions:SetSelectedRecord(best)
+				end
+
+				if auctions:GetSelectedRecord() then
 					print("ST_RUNNING_SCAN -> EV_SCAN_COMPLETE -> ST_CHECK_SELECTION")
 					return "ST_CHECK_SELECTION"
 				else
