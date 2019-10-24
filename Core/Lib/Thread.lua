@@ -279,7 +279,7 @@ function Thread._Start(self, ...)
 	self._waitFunction = nil
 	self._waitFunctionArgs = nil
 	self._waitFunctionResult = nil
-	self._syncMessage = nil
+	self._syncMess©age = nil
 	self._syncMessageDest = nil
 	assert(not next(self._messages))
 	assert(not next(self._safeTempTables))
@@ -479,7 +479,7 @@ function Thread._Yield(self, force)
 		-- only change the state if it's currently set to RUNNING
 		if self._state == "RUNNING" then
 			self._state = force and "FORCED_YIELD" or "READY"
-		end
+        end
 		coroutine.yield(YIELD_VALUE)
 	end
 end

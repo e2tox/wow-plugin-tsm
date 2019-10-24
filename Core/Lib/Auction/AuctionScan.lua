@@ -561,34 +561,27 @@ end
 function private.ValidateThreaded(auctionScan)
 	-- wait a bit for things to settle
 	local settleStartTime = GetTime()
-	print(51, settleStartTime, MAX_SETTLE_TIME)
 	while not CanSendAuctionQuery() and GetTime() < settleStartTime + MAX_SETTLE_TIME do
 		if auctionScan:_IsCancelled() then
-
-			print(53)
 			return false
 		end
-
-		print(52, GetTime(), settleStartTime + MAX_SETTLE_TIME)
 		TSMAPI_FOUR.Thread.Yield(true)
 	end
 	TSM:LOG_INFO("Took %d seconds for AH to settle", GetTime() - settleStartTime)
 	-- check the result
 	local tryNum = 0
 
-	print(54, MAX_SOFT_RETRIES)
 	while tryNum < MAX_SOFT_RETRIES do
-
-		print(55, tryNum)
 		if auctionScan:_IsCancelled() then
 			TSM:LOG_INFO("Stopping canelled scan")
 			return false
 		end
-		print(56, SCAN_RESULT_DELAY)
+
+--		print(56, SCAN_RESULT_DELAY)
 		-- wait a small delay and then try and get the result
 		TSMAPI_FOUR.Thread.Sleep(SCAN_RESULT_DELAY)
+--		print(57)
 
-		print(57)
 		-- get result
 		if private.IsAuctionPageValidThreaded(auctionScan) then
 			-- result is valid, so we're done
@@ -596,16 +589,13 @@ function private.ValidateThreaded(auctionScan)
 			return true
 		end
 
-		print(58)
 		-- only count tries if we're ready to send the next query
 		if CanSendAuctionQuery() then
-
-			print(59)
 			tryNum = tryNum + 1
 		end
 	end
 
-	print(60)
+--	print(60)
 	TSM:LOG_INFO("Exhausted soft retries")
 	return false
 end
@@ -643,7 +633,7 @@ function private.ScanQueryThreaded(auctionScan)
 	wipe(auctionScan._results)
 	local allSuccess = true
 	for i, filter in ipairs(auctionScan._filters) do
-		print(1, i, filter)
+--		print(1, i, filter)
 		-- update the sort for this filter
 		if filter:_IsSniper() or filter:_IsGetAll() then
 			private.SetAuctionSort()
@@ -660,17 +650,16 @@ function private.ScanQueryThreaded(auctionScan)
 		while hasMorePages and not auctionScan:_IsCancelled() do
 
 			local numPages = ceil(select(2, GetNumAuctionItems("list")) / NUM_AUCTION_ITEMS_PER_PAGE)
-			print(2, hasMorePages, numPages)
+--			print(2, hasMorePages, numPages)
 			-- query the AH
 			filter:_DoAuctionQueryThreaded()
-			print(21)
+--			print(21)
 			filter:_SetNumPages(numPages)
-			print(22)
+--			print(22)
 			-- we've made the query, now store the results
 			if filter:_IsSniper() then
 				-- check the result
-
-				print(23)
+--				print(23)
 				if not private.ValidateThreaded(auctionScan) then
 					-- don't store results for a failed filter
 					TSM:LOG_ERR("Failed to scan filter")
@@ -680,11 +669,11 @@ function private.ScanQueryThreaded(auctionScan)
 					TSM:LOG_INFO("Stopping canelled scan")
 					break
 				end
-				print(24)
+--				print(24)
 				auctionScan._db:SetQueryUpdatesPaused(true)
-				print(25)
+--				print(25)
 				for j = 1, GetNumAuctionItems("list") do
-					print(3, j)
+--					print(3, j)
 					local row = auctionScan:_CreateAuctionRowIfNotFiltered(j, filter)
 					if row then
 						local hashNoSeller = row:GetField("hashNoSeller")
@@ -705,7 +694,7 @@ function private.ScanQueryThreaded(auctionScan)
 							if newQuery:Count() == 1 then
 								numNewResults = numNewResults + 1
 								for _, newRow in newQuery:Iterator() do
-									print(4, newRow)
+--									print(4, newRow)
 									tinsert(auctionScan._results, newRow)
 								end
 							end
@@ -715,7 +704,7 @@ function private.ScanQueryThreaded(auctionScan)
 						row:Release()
 					end
 				end
-				print(26)
+--				print(26)
 				auctionScan._db:SetQueryUpdatesPaused(false)
 			else
 				-- scan the results
