@@ -407,7 +407,7 @@ function private.FSMCreate()
 	end
 	local function ScanOnFilterDone(self, filter, numNewResults)
 		if numNewResults > 0 then
-			TSM.Sound.PlaySound(TSM.db.global.sniperOptions.sniperSound)
+			-- TSM.Sound.PlaySound(TSM.db.global.sniperOptions.sniperSound)
 		end
 	end
 	private.fsm = TSMAPI_FOUR.FSM.New("SNIPER")
@@ -520,6 +520,7 @@ function private.FSMCreate()
 				local best = auctions:GetLatestRecord()
 				-- always set best item as current selection
 				if best then
+					TSM.Sound.PlaySound(TSM.db.global.sniperOptions.sniperSound)
 --					print("Found best record", best.hash)
 					auctions:SetSelectedRecord(best)
 					return "ST_CHECK_SELECTION"
