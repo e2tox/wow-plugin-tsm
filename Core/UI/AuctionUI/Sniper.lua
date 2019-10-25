@@ -330,6 +330,8 @@ function private.FSMCreate()
 	TSM.Event.Register("AUCTION_HOUSE_CLOSED", function()
 		private.fsm:ProcessEvent("EV_AUCTION_HOUSE_CLOSED")
 	end)
+
+	-- region Local functions
 	local function UpdateScanFrame(context)
 		if not context.scanFrame then
 			return
@@ -410,7 +412,10 @@ function private.FSMCreate()
 			-- TSM.Sound.PlaySound(TSM.db.global.sniperOptions.sniperSound)
 		end
 	end
+	-- endregion
+
 	private.fsm = TSMAPI_FOUR.FSM.New("SNIPER")
+		-- 初始化状态机变量，与 ST_RESULTS 不同的是
 		:AddState(TSMAPI_FOUR.FSM.NewState("ST_INIT")
 			:SetOnEnter(function(context, ...)
 --				print("ST_INIT")
@@ -456,6 +461,7 @@ function private.FSMCreate()
 			:AddTransition("ST_RUNNING_SCAN")
 			:AddEvent("EV_START_SCAN", TSMAPI_FOUR.FSM.SimpleTransitionEventHandler("ST_INIT"))
 		)
+		-- endregion
 		:AddState(TSMAPI_FOUR.FSM.NewState("ST_RUNNING_SCAN")
 			:SetOnEnter(function(context)
 --				print("ST_RUNNING_SCAN")

@@ -47,10 +47,12 @@ function AuctionScan.__init(self)
 end
 
 function AuctionScan._Acquire(self, db)
+	assert(db)
 	self._db = db
 end
 
 function AuctionScan._Release(self)
+	TSM:LOG_ERR("Release AuctionScan object")
 	self._thread = nil
 	self._resolveSellers = nil
 	self._ignoreItemLevel = nil
@@ -668,7 +670,8 @@ function private.ScanQueryThreaded(auctionScan)
 				end
 --				print(24)
 				auctionScan._db:SetQueryUpdatesPaused(true)
---				print(25)
+--
+				--				print(25)
 				for j = 1, GetNumAuctionItems("list") do
 --					print(3, j)
 					local row = auctionScan:_CreateAuctionRowIfNotFiltered(j, filter)
