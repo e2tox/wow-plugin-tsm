@@ -649,13 +649,13 @@ function private.FSMCreate()
 --				context.scanFrame:GetElement("auctions"):ResetLatest()
 				-- must use return because the selection changed event is not fired here
 				return "ST_RESULTS"
-			end)
+			end):ST_RESULTS
 		)
 		:AddState(TSMAPI_FOUR.FSM.NewState("ST_AUCTION_FOUND")
 			:SetOnEnter(function(context, result)
 --				print("ST_AUCTION_FOUND")
 				context.findResult = result
-				context.numFound = min(#result, context.auctionScan:GetNumCanBuy(context.findAuction) or math.huge)
+				context.numFound = #result
 				assert(context.numActioned == 0 and context.numConfirmed == 0)
 				return "ST_BIDDING_BUYING"
 			end)
@@ -776,49 +776,65 @@ function private.FSMCreate()
 		)
 		:AddState(TSMAPI_FOUR.FSM.NewState("ST_PLACING_BID_BUY")
 			:SetOnEnter(function(context)
-				local index = tremove(context.findResult, #context.findResult)
-				local selection = context.findAuction
+
+				local item = context.findAuction
+				local index = tremove(context.findResult, #context.findResult) -- findResult is index of matching findAuction
+
 --				print("ST_PLACING_BID_BUY", index)
-				assert(index)
-				assert(selection)
-				if context.auctionScan:ValidateIndex(index, selection, true) then
+				assert(item)
+
+				if not index or not context.auctionScan:ValidateIndex(index, item, true) then
+					-- maybe because other item disappear on the list, so we do one more time to
+					-- search current page for this item
+					index = context.auctionScan:FindIndexOnCurrentPage(item, true)
+				end
+
+				if index and index > 0 then
 					if context.scanType == "buyout" then
 						-- buy the auction
-						PlaceAuctionBid("list", index, selection:GetField("buyout"))
+						PlaceAuctionBid("list", index, item:GetFields("buyout"))
 					elseif context.scanType == "bid" then
 						-- bid on the auction
-						PlaceAuctionBid("list", index, TSM.Auction.Util.GetRequiredBidByScanResultRow(selection))
+						PlaceAuctionBid("list", index, TSM.Auction.Util.GetRequiredBidByScanResultRow(item))
 					else
 						error("Invalid scanType: "..tostring(context.scanType))
 					end
 					context.numActioned = context.numActioned + 1
 				else
 					if context.scanType == "buyout" then
-						local text = TSM.Money.ToString(selection.buyout, nil, "OPT_ICON", "OPT_TRIM")
-						print(format("|cFFFF0000购买失败|r |T%s:0|t %s %s (%s)", selection.texture, selection.itemLink, text, selection.seller))
+						local text = TSM.Money.ToString(item.buyout, nil, "OPT_ICON", "OPT_TRIM")
+						print(format("|cFFFF0000%s|r |T%s:0|t %s %s (%s)", "查找失败", item.texture, item.itemLink, text, item.seller))
 					elseif context.scanType == "bid" then
 						TSM:Printf(L["Failed to bid on auction of %s (x%s) for %s."], context.findAuction:GetField("rawLink"), context.findAuction:GetField("stackSize"), TSM.Money.ToString(context.findAuction:GetField("bid")))
 					else
 						error("Invalid scanType: "..tostring(context.scanType))
 					end
 				end
+
 				return "ST_BIDDING_BUYING"
 			end)
 			:AddTransition("ST_BIDDING_BUYING")
 		)
+		-- the confirmation is from system message
 		:AddState(TSMAPI_FOUR.FSM.NewState("ST_CONFIRMING_BID_BUY")
 			:SetOnEnter(function(context, success)
 --				print("ST_CONFIRMING_BID_BUY")
+				local item = context.findAuction
+
 				if not success then
-					TSM:Printf(L["Failed to buy auction of %s (x%s) for %s."], context.findAuction:GetField("rawLink"), context.findAuction:GetField("stackSize"), TSM.Money.ToString(context.findAuction:GetField("buyout")))
+					local text = TSM.Money.ToString(item.buyout, nil, "OPT_ICON", "OPT_TRIM")
+					print(format("|cFFFF0000%s|r |T%s:0|t %s %s (%s)", "竞标失败", item.texture, item.itemLink, text, item.seller))
 				end
-				context.numConfirmed = context.numConfirmed + 1
+
 				-- remove this row
-				context.auctionScan:DeleteRowFromDB(context.findAuction, true)
+				context.auctionScan:DeleteRowFromDB(item, true)
+
+				context.numConfirmed = context.numConfirmed + 1
+
+				-- selection will move to next item
 				context.findAuction = context.scanFrame and context.scanFrame:GetElement("auctions"):GetSelectedRecord()
 				return "ST_BIDDING_BUYING"
 			end)
-            :AddTransition("ST_CHECK_SELECTION")
 			:AddTransition("ST_BIDDING_BUYING")
 		)
 		:AddDefaultEvent("EV_SCAN_FRAME_SHOWN", function(context, scanFrame)
