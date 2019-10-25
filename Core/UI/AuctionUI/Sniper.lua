@@ -649,7 +649,7 @@ function private.FSMCreate()
 --				context.scanFrame:GetElement("auctions"):ResetLatest()
 				-- must use return because the selection changed event is not fired here
 				return "ST_RESULTS"
-			end):ST_RESULTS
+			end)
 		)
 		:AddState(TSMAPI_FOUR.FSM.NewState("ST_AUCTION_FOUND")
 			:SetOnEnter(function(context, result)

@@ -1,6 +1,6 @@
 ## Interface: 80205
-## Title: |cff00fe00TradeSkillMaster|r
-## Notes: Auction house and gold making addon.
+## Title: |cff00fe00TradeSkillMaster 长年版|r
+## Notes: 经过赋能的商业大师插件，值得你拥有
 ## Author: TradeSkillMaster Team
 ## Version: v4.8.17
 ## SavedVariables: TradeSkillMasterDB, TSMItemInfoDB, TradeSkillMasterModulesDB
