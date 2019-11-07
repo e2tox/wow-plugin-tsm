@@ -196,6 +196,15 @@ function private.GetTabElements(self, path)
 						:SetTextInfo("profit", private.CraftsGetProfitText)
 						:SetSortInfo("profit")
 						:Commit()
+					:NewColumn("profitRate")
+						:SetTitles(L["PR"])
+						:SetWidth(100)
+						:SetFont(TSM.UI.Fonts.RobotoMedium)
+						:SetFontHeight(12)
+						:SetJustifyH("RIGHT")
+						:SetTextInfo("profitRate", private.CraftsGetProfitRateText)
+						:SetSortInfo("profitRate")
+						:Commit()
 					:NewColumn("saleRate")
 						:SetTitleIcon("iconPack.18x18/SaleRate")
 						:SetWidth(32)
@@ -362,6 +371,13 @@ function private.CraftsGetProfitText(profit)
 		return ""
 	end
 	return TSM.Money.ToString(profit, profit >= 0 and "|cff2cec0d" or "|cffd50000")
+end
+
+function private.CraftsGetProfitRateText(profit)
+	if tostring(profit) == tostring(math.huge * 0) then
+		return ""
+	end
+	return profit
 end
 
 function private.CraftsGetSaleRateText(saleRate)

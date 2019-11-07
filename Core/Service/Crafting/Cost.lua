@@ -90,6 +90,15 @@ function Cost.GetProfitBySpellId(spellId)
 	return profit
 end
 
+function Cost.GetProfitRateBySpellId(spellId)
+	local craftingCost, _, profit = Cost.GetCostsBySpellId(spellId)
+	if profit and craftingCost then
+		return TSM.Math.Round(profit / craftingCost * 100)
+	else
+		return nil
+	end
+end
+
 function Cost.GetCostsBySpellId(spellId)
 	local craftingCost = Cost.GetCraftingCostBySpellId(spellId)
 	local itemString = TSM.Crafting.GetItemString(spellId)

@@ -175,6 +175,7 @@ function Crafting.CreateCraftsQuery()
 		:VirtualField("craftingCost", "number", private.CraftingCostVirtualField, "spellId")
 		:VirtualField("itemValue", "number", private.ItemValueVirtualField, "itemString")
 		:VirtualField("profit", "number", private.ProfitVirtualField, "spellId")
+	    :VirtualField("profitRate", "number", private.ProfitRateVirtualField, "spellId")
 		:VirtualField("saleRate", "number", private.SaleRateVirtualField, "itemString")
 end
 
@@ -618,6 +619,10 @@ end
 
 function private.ProfitVirtualField(spellId)
 	return TSM.Crafting.Cost.GetProfitBySpellId(spellId) or math.huge * 0
+end
+
+function private.ProfitRateVirtualField(spellId)
+	return TSM.Crafting.Cost.GetProfitRateBySpellId(spellId) or math.huge * 0
 end
 
 function private.SaleRateVirtualField(itemString)
