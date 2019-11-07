@@ -153,7 +153,7 @@ function private.GetTabElements(self, path)
 						:Commit()
 					:NewColumn("bags")
 						:SetTitles(L["Bag"])
-						:SetWidth(26)
+						:SetWidth(36)
 						:SetFont(TSM.UI.Fonts.RobotoMedium)
 						:SetFontHeight(12)
 						:SetJustifyH("RIGHT")
@@ -162,7 +162,7 @@ function private.GetTabElements(self, path)
 						:Commit()
 					:NewColumn("ah")
 						:SetTitles(L["AH"])
-						:SetWidth(24)
+						:SetWidth(36)
 						:SetFont(TSM.UI.Fonts.RobotoMedium)
 						:SetFontHeight(12)
 						:SetJustifyH("RIGHT")
@@ -198,12 +198,21 @@ function private.GetTabElements(self, path)
 						:Commit()
 					:NewColumn("profitRate")
 						:SetTitles(L["PR"])
-						:SetWidth(100)
+						:SetWidth(32)
 						:SetFont(TSM.UI.Fonts.RobotoMedium)
 						:SetFontHeight(12)
 						:SetJustifyH("RIGHT")
 						:SetTextInfo("profitRate", private.CraftsGetProfitRateText)
 						:SetSortInfo("profitRate")
+						:Commit()
+					:NewColumn("numSale")
+						:SetTitles(L["PR"])
+						:SetWidth(32)
+						:SetFont(TSM.UI.Fonts.RobotoMedium)
+						:SetFontHeight(12)
+						:SetJustifyH("RIGHT")
+						:SetTextInfo("numSale", private.GetNumSale)
+						:SetSortInfo("numSale")
 						:Commit()
 					:NewColumn("saleRate")
 						:SetTitleIcon("iconPack.18x18/SaleRate")
@@ -351,6 +360,10 @@ function private.CraftsGetBagsText(bagQuantity)
 	return bagQuantity or "0"
 end
 
+function private.GetNumSale(numSale)
+	return numSale or "0"
+end
+
 function private.CraftsGetAHText(bagQuantity)
 	return bagQuantity or "0"
 end
@@ -377,7 +390,11 @@ function private.CraftsGetProfitRateText(profit)
 	if tostring(profit) == tostring(math.huge * 0) then
 		return ""
 	end
-	return profit
+	if profit >= 0 then
+		return "|cff2cec0d"..profit.."%|r"
+	else
+		return "|cffd50000"..profit.."%|r"
+	end
 end
 
 function private.CraftsGetSaleRateText(saleRate)

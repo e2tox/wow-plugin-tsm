@@ -64,7 +64,11 @@ function Queue.SetNum(spellId, num)
 end
 
 function Queue.GetNum(spellId)
-	return private.db:GetUniqueRowField("spellId", spellId, "num") or 0
+	if spellId then
+		return private.db:GetUniqueRowField("spellId", spellId, "num") or 0
+	else
+		return 0
+	end
 end
 
 function Queue.Add(spellId, quantity)

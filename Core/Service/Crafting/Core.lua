@@ -172,6 +172,7 @@ function Crafting.CreateCraftsQuery()
 		:LeftJoin(TSM.Crafting.Queue.GetDBForJoin(), "spellId")
 		:VirtualField("bagQuantity", "number", TSMAPI_FOUR.Inventory.GetBagQuantity, "itemString")
 		:VirtualField("auctionQuantity", "number", TSMAPI_FOUR.Inventory.GetAuctionQuantity, "itemString")
+		:VirtualField("numSale", "number", private.GetAuctionSaleCount, "itemString")
 		:VirtualField("craftingCost", "number", private.CraftingCostVirtualField, "spellId")
 		:VirtualField("itemValue", "number", private.ItemValueVirtualField, "itemString")
 		:VirtualField("profit", "number", private.ProfitVirtualField, "spellId")
@@ -615,6 +616,10 @@ end
 
 function private.ItemValueVirtualField(itemString)
 	return TSM.Crafting.Cost.GetCraftedItemValue(itemString) or math.huge * 0
+end
+
+function private.GetAuctionSaleCount(itemString)
+	return TSM.AuctionDB.GetRealmItemData(itemString, "numAuctions") or math.huge * 0
 end
 
 function private.ProfitVirtualField(spellId)
