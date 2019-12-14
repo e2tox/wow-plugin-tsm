@@ -1,6 +1,6 @@
-## v4.8.17 Changes
+## v4.8.23 Changes
 
-* [Classic] Fixed issue with scan data not saving properly, affecting AuctionDB prices.
-* [Classic] Sped up manual scans.
+* Fixed error during custom posting.
+* Fixed error with variation items not getting tagged with the proper mail type.
 
 [Known Issues](http://support.tradeskillmaster.com/display/KB/TSM4+Currently+Known+Issues)

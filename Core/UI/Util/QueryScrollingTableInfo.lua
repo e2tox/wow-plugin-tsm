@@ -7,8 +7,9 @@
 -- ------------------------------------------------------------------------------ --
 
 local _, TSM = ...
-local QueryScrollingTableInfo = TSM.Lib.Class.DefineClass("QueryScrollingTableInfo", TSM.UI.Util.ScrollingTableInfo)
-local QueryScrollingTableColumnInfo = TSM.Lib.Class.DefineClass("QueryScrollingTableColumnInfo", TSM.UI.Util.ScrollingTableColumnInfo)
+local Vararg = TSM.Include("Util.Vararg")
+local QueryScrollingTableInfo = TSM.Include("LibTSMClass").DefineClass("QueryScrollingTableInfo", TSM.UI.Util.ScrollingTableInfo)
+local QueryScrollingTableColumnInfo = TSM.Include("LibTSMClass").DefineClass("QueryScrollingTableColumnInfo", TSM.UI.Util.ScrollingTableColumnInfo)
 TSM.UI.Util.QueryScrollingTableInfo = QueryScrollingTableInfo
 local private = { recycledColInfo = {} }
 
@@ -70,7 +71,7 @@ function QueryScrollingTableColumnInfo._Release(self)
 end
 
 function QueryScrollingTableColumnInfo.SetTitles(self, ...)
-	TSM.Vararg.IntoTable(self._titles, ...)
+	Vararg.IntoTable(self._titles, ...)
 	return self
 end
 

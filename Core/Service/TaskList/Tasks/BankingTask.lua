@@ -7,8 +7,8 @@
 -- ------------------------------------------------------------------------------ --
 
 local _, TSM = ...
-local BankingTask = TSM.Lib.Class.DefineClass("BankingTask", TSM.TaskList.ItemTask)
-local L = TSM.L
+local BankingTask = TSM.Include("LibTSMClass").DefineClass("BankingTask", TSM.TaskList.ItemTask)
+local L = TSM.Include("Locale").GetTable()
 TSM.TaskList.BankingTask = BankingTask
 local private = {
 	registeredCallbacks = false,

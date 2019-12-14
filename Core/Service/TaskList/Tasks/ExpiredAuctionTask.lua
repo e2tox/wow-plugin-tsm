@@ -7,8 +7,8 @@
 -- ------------------------------------------------------------------------------ --
 
 local _, TSM = ...
-local ExpiredAuctionTask = TSM.Lib.Class.DefineClass("ExpiredAuctionTask", TSM.TaskList.Task)
-local L = TSM.L
+local ExpiredAuctionTask = TSM.Include("LibTSMClass").DefineClass("ExpiredAuctionTask", TSM.TaskList.Task)
+local L = TSM.Include("Locale").GetTable()
 TSM.TaskList.ExpiredAuctionTask = ExpiredAuctionTask
 local private = {}
 

@@ -11,7 +11,8 @@
 -- @classmod ItemList
 
 local _, TSM = ...
-local ItemList = TSM.Lib.Class.DefineClass("ItemList", TSM.UI.FastScrollingList)
+local ItemInfo = TSM.Include("Service.ItemInfo")
+local ItemList = TSM.Include("LibTSMClass").DefineClass("ItemList", TSM.UI.FastScrollingList)
 TSM.UI.ItemList = ItemList
 local private = { rowFrameLookup = {} }
 local EXPANDER_PADDING_LEFT = 7
@@ -249,7 +250,7 @@ function ItemList._SetRowData(self, row, data)
 		expander:Show()
 	else
 		text:SetText(TSM.UI.GetColoredItemName(data))
-		icon:SetTexture(TSMAPI_FOUR.Item.GetTexture(data))
+		icon:SetTexture(ItemInfo.GetTexture(data))
 		icon:Show()
 		expander:Hide()
 		if not isHeader and self._selectedItems[data] then

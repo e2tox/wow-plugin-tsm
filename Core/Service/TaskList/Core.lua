@@ -8,7 +8,8 @@
 
 local _, TSM = ...
 local TaskList = TSM:NewPackage("TaskList")
-local Task = TSM.Lib.Class.DefineClass("TASK", nil, "ABSTRACT")
+local TempTable = TSM.Include("Util.TempTable")
+local Task = TSM.Include("LibTSMClass").DefineClass("TASK", nil, "ABSTRACT")
 TaskList.Task = Task
 local private = {
 	updateCallback = nil,
@@ -41,13 +42,13 @@ function TaskList.GetNumTasks()
 end
 
 function TaskList.Iterator()
-	local tasks = TSM.TempTable.Acquire()
+	local tasks = TempTable.Acquire()
 	for _, iterFunc in ipairs(private.iterFuncs) do
 		for _, task in iterFunc() do
 			tinsert(tasks, task)
 		end
 	end
-	return TSM.TempTable.Iterator(tasks)
+	return TempTable.Iterator(tasks)
 end
 
 function TaskList.OnTaskUpdated()
